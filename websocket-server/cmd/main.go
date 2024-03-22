@@ -2,7 +2,9 @@ package main
 
 import (
 	"fmt"
+	"math"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
@@ -12,6 +14,12 @@ import (
 var busClients = make(map[string][]*websocket.Conn)
 var clients = make(map[*websocket.Conn]bool)
 var busOwner = make(map[string]*websocket.Conn)
+var clientLocation = make(map[*websocket.Conn]Location)
+
+type Location struct {
+	Lat  float64 `json:"lat"`
+	Long float64 `json:"long"`
+}
 
 type BusData struct {
 	BusId string `json:"busId"`
@@ -83,7 +91,12 @@ func main() {
 				if !clients[conn] {
 					continue
 				}
-				client.WriteJSON(data)
+				clientLoc := clientLocation[client]
+				busLat, _ := strconv.ParseFloat(data.Lat, 64)
+				busLong, _ := strconv.ParseFloat(data.Long, 64)
+				if isInside(busLat, busLong, clientLoc.Lat, clientLoc.Long) {
+					client.WriteJSON(data)
+				}
 			}
 		}
 	})
@@ -108,6 +121,10 @@ func main() {
 		}
 
 		clients[conn] = true
+		clientLocation[conn] = Location{
+			Lat:  19.9235263,
+			Long: 83.1112693,
+		}
 		busClients[busId] = append(busClients[busId], conn)
 		conn.WriteMessage(1, []byte("Connected to the Bus"))
 
@@ -115,6 +132,7 @@ func main() {
 			_, _, err := conn.ReadMessage()
 			if err != nil {
 				delete(clients, conn)
+				delete(clientLocation, conn)
 				var toRemove int
 				for i, v := range busClients[busId] {
 					if v == conn {
@@ -135,6 +153,33 @@ func removeBusConns(busId string) {
 	for _, client := range busClients[busId] {
 		client.WriteMessage(1, []byte("Bus Discounted"))
 		client.Close()
+		_, has := clientLocation[client]
+		if has {
+			delete(clientLocation, client)
+		}
 		delete(clients, client)
+	}
+}
+
+func isInside(lat1, lon1, lat2, lon2 float64) bool {
+	const radiusOfEarth = 6371 // Radius of Earth in kilometers
+
+	// Convert latitude and longitude from degrees to radians
+	lat1Rad := lat1 * math.Pi / 180
+	lon1Rad := lon1 * math.Pi / 180
+	lat2Rad := lat2 * math.Pi / 180
+	lon2Rad := lon2 * math.Pi / 180
+
+	// Haversine formula
+	dLon := lon2Rad - lon1Rad
+	dLat := lat2Rad - lat1Rad
+	a := math.Sin(dLat/2)*math.Sin(dLat/2) + math.Cos(lat1Rad)*math.Cos(lat2Rad)*math.Sin(dLon/2)*math.Sin(dLon/2)
+	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
+	distance := radiusOfEarth * c
+
+	if distance > 5000 {
+		return false
+	} else {
+		return true
 	}
 }
