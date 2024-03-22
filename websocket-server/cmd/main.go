@@ -35,11 +35,11 @@ func main() {
 	config.AllowAllOrigins = true
 	r.Use(cors.New(config))
 
-	// r.GET("/", func(c *gin.Context) {
-	// 	c.JSON(200, gin.H{
-	// 		"message": "Hello",
-	// 	})
-	// })
+	r.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "Hello",
+		})
+	})
 
 	r.GET("/ws/bus/:busId", func(c *gin.Context) {
 		busId, ok := c.Params.Get("busId")
