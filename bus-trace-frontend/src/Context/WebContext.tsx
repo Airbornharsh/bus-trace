@@ -38,8 +38,8 @@ interface WebSocketProviderProps {
   children: ReactNode
 }
 
-const WebSocketUrl = 'ws://localhost:8000/ws'
-// const WebSocketUrl = 'wss://bus-trace-websocket-server.onrender.com/ws'
+// const WebSocketUrl = 'ws://localhost:8000/ws'
+const WebSocketUrl = 'wss://bus-trace-websocket-server.onrender.com/ws'
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   children
