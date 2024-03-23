@@ -65,7 +65,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (position) => {
-              alert(position.coords)
               newSocket.send(
                 JSON.stringify({
                   busId: '1',
