@@ -80,6 +80,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           )
         } else {
           console.log('Not Supported by Browser')
+          alert('Not supported')
         }
       }, 2000)
     })
