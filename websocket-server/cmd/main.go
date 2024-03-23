@@ -4,17 +4,17 @@ import (
 	"fmt"
 	"math"
 	"net/http"
-	"strconv"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
 )
 
-var busClients = make(map[string][]*websocket.Conn)
-var clients = make(map[*websocket.Conn]bool)
-var busOwner = make(map[string]*websocket.Conn)
-var clientLocation = make(map[*websocket.Conn]Location)
+var busClients = make(map[string][]string)
+var clients = make(map[string]bool)
+var busOwner = make(map[string]string)
+var clientLocation = make(map[string]Location)
+var userClient = make(map[string]*websocket.Conn)
 
 type Location struct {
 	Lat  float64 `json:"lat"`
@@ -22,10 +22,10 @@ type Location struct {
 }
 
 type BusData struct {
-	BusId string `json:"busId"`
-	Lat   string `json:"lat"`
-	Long  string `json:"long"`
-	Index int    `json:"index"`
+	BusId string  `json:"busId"`
+	Lat   float64 `json:"lat"`
+	Long  float64 `json:"long"`
+	Index int     `json:"index"`
 }
 
 var upgrader = websocket.Upgrader{
@@ -49,97 +49,134 @@ func main() {
 		})
 	})
 
-	r.GET("/ws/bus/:busId", func(c *gin.Context) {
-		busId, ok := c.Params.Get("busId")
-		if !ok {
+	r.GET("/ws/bus/:userId/:busId", func(c *gin.Context) {
+		busId, busOk := c.Params.Get("busId")
+		if !busOk {
 			fmt.Println("Didn't got the Bus Id")
+		}
+		userId, userOk := c.Params.Get("userId")
+		if !userOk {
+			fmt.Println("Didn't got the User Id")
 		}
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, c.Writer.Header())
 		if err != nil {
 			fmt.Println(err.Error())
 		}
-
-		clients[conn] = true
+		userClient[userId] = conn
+		clients[userId] = true
 		_, has := busOwner[busId]
 		if has {
 			fmt.Println("Already There")
 			conn.WriteMessage(1, []byte("Bus Has Already Registered"))
 			conn.Close()
-			delete(clients, conn)
+			delete(clients, userId)
 			return
 		} else {
 			defer delete(busOwner, busId)
 			defer removeBusConns(busId)
 			defer delete(busClients, busId)
 		}
-		busOwner[busId] = conn
-		busClients[busId] = append(busClients[busId], conn)
+		busOwner[busId] = userId
+		busClients[busId] = append(busClients[busId], userId)
 		conn.WriteMessage(1, []byte("Bus Added"))
 
 		for {
 			var data BusData
-			if !clients[conn] {
+			if !clients[userId] {
 				break
 			}
 			err = conn.ReadJSON(&data)
 			if err != nil {
 				fmt.Println("Error in Reading Json", err.Error())
+				break
 			}
 			data.BusId = busId
 			for i, client := range busClients[busId] {
 				data.Index = i + 1
-				if !clients[conn] {
+				if !clients[client] {
 					continue
 				}
 				clientLoc := clientLocation[client]
-				busLat, _ := strconv.ParseFloat(data.Lat, 64)
-				busLong, _ := strconv.ParseFloat(data.Long, 64)
-				if isInside(busLat, busLong, clientLoc.Lat, clientLoc.Long) {
-					client.WriteJSON(data)
+				clientLocation[userId] = Location{
+					Lat:  data.Lat,
+					Long: data.Long,
+				}
+				if isInside(data.Lat, data.Long, clientLoc.Lat, clientLoc.Long) {
+					con, has := userClient[client]
+					if has {
+						con.WriteJSON(data)
+					}
 				}
 			}
 		}
 	})
 
-	r.GET("/ws/user/:busId", func(c *gin.Context) {
-		busId, ok := c.Params.Get("busId")
-		if !ok {
+	r.GET("/ws/user/:userId/:busId", func(c *gin.Context) {
+		busId, busOk := c.Params.Get("busId")
+		if !busOk {
 			fmt.Println("Didn't get the Bus Id")
+		}
+		userId, userOk := c.Params.Get("userId")
+		if !userOk {
+			fmt.Println("Didn't got the User Id")
 		}
 		conn, err := upgrader.Upgrade(c.Writer, c.Request, c.Writer.Header())
 		if err != nil {
 			fmt.Println(err.Error())
 		}
 
-		busConn, has := busOwner[busId]
+		busUserId, has := busOwner[busId]
 		if !has {
 			defer conn.Close()
 			conn.WriteMessage(1, []byte("Bus is not Yet Connected"))
 			return
 		} else {
+			busConn, has := userClient[busUserId]
+			if !has {
+				fmt.Println("Error in getting the bus Conn")
+			}
 			busConn.WriteMessage(1, []byte("New User is Tracking"))
 		}
 
-		clients[conn] = true
-		clientLocation[conn] = Location{
+		userClient[userId] = conn
+		clients[userId] = true
+		clientLocation[userId] = Location{
 			Lat:  19.9235263,
 			Long: 83.1112693,
 		}
-		busClients[busId] = append(busClients[busId], conn)
+		busClients[busId] = append(busClients[busId], userId)
+		busUserId, busUserIdHas := busOwner[busId]
+		if !busUserIdHas {
+			fmt.Println("Not Found Bus User Id")
+		}
+		busLocation, busLocationHas := clientLocation[busUserId]
+		if !busLocationHas {
+			fmt.Println("No Bus Location Found")
+		}
+		conn.WriteJSON(BusData{
+			BusId: busId,
+			Lat:   busLocation.Lat,
+			Long:  busLocation.Long,
+			Index: 1,
+		})
 		conn.WriteMessage(1, []byte("Connected to the Bus"))
 
 		for {
 			_, _, err := conn.ReadMessage()
 			if err != nil {
-				delete(clients, conn)
-				delete(clientLocation, conn)
+				delete(clients, userId)
+				delete(clientLocation, userId)
 				var toRemove int
 				for i, v := range busClients[busId] {
-					if v == conn {
+					if v == userId {
 						toRemove = i
 					}
 				}
 				busClients[busId] = append(busClients[busId][:toRemove], busClients[busId][toRemove+1:]...)
+				busConn, has := userClient[busUserId]
+				if !has {
+					fmt.Println("Error in getting the bus Conn")
+				}
 				busConn.WriteMessage(1, []byte("User Discounted"))
 				break
 			}
@@ -150,14 +187,18 @@ func main() {
 }
 
 func removeBusConns(busId string) {
-	for _, client := range busClients[busId] {
+	for _, userId := range busClients[busId] {
+		client, has := userClient[userId]
+		if !has {
+			fmt.Println("Error in getting the bus Conn")
+		}
 		client.WriteMessage(1, []byte("Bus Discounted"))
 		client.Close()
-		_, has := clientLocation[client]
-		if has {
-			delete(clientLocation, client)
+		_, locationHas := clientLocation[userId]
+		if locationHas {
+			delete(clientLocation, userId)
 		}
-		delete(clients, client)
+		delete(clients, userId)
 	}
 }
 
@@ -177,7 +218,7 @@ func isInside(lat1, lon1, lat2, lon2 float64) bool {
 	c := 2 * math.Atan2(math.Sqrt(a), math.Sqrt(1-a))
 	distance := radiusOfEarth * c
 
-	if distance > 5000 {
+	if distance > 10000 {
 		return false
 	} else {
 		return true

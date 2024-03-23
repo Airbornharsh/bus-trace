@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom'
 
 const Bus = () => {
   const [load, setLoad] = useState(false)
-  const { setBusSocket } = useWebSocket()
+  const { connected, setBusSocket } = useWebSocket()
 
   const params = useParams()
 
@@ -16,7 +16,12 @@ const Bus = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.busId])
 
-  return <div>Admin</div>
+  return (
+    <div>
+      <h2>Admin</h2>
+      <p>{connected ? 'Connected' : 'Disconnected'}</p>
+    </div>
+  )
 }
 
 export default Bus
