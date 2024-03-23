@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom'
 
 const Bus = () => {
   const [load, setLoad] = useState(false)
-  const { connected, setBusSocket } = useWebSocket()
+  const { customAlert, connected, setBusSocket } = useWebSocket()
 
   const params = useParams()
 
@@ -20,6 +20,7 @@ const Bus = () => {
     <div>
       <h2>Admin</h2>
       <p>{connected ? 'Connected' : 'Disconnected'}</p>
+      <p>{customAlert}</p>
     </div>
   )
 }

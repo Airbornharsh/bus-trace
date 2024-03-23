@@ -16,7 +16,7 @@ const Bus = () => {
   const [oldMarker, setOldMarker] = useState<Feature | null>(null)
   const [zoom, setZoom] = useState(12)
   const [load, setLoad] = useState(false)
-  const { connected, setUserSocket, location } = useWebSocket()
+  const { connected, customAlert, setUserSocket, location } = useWebSocket()
 
   const params = useParams()
 
@@ -83,6 +83,7 @@ const Bus = () => {
   return (
     <div className="flex flex-col justify-center items-center">
       <p>{connected ? 'Connected' : 'Disconnected'}</p>
+      <p>{customAlert}</p>
       <p>{'Latitude: ' + location.lat}</p>
       <p>{'Longitude: ' + location.long}</p>
       <div

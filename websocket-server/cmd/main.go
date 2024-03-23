@@ -16,6 +16,12 @@ var busOwner = make(map[string]string)
 var clientLocation = make(map[string]Location)
 var userClient = make(map[string]*websocket.Conn)
 
+// Bus Connected = 1
+// Bus Disconnected = 2
+// User Connected = 3
+// User Disconnected = 4
+// Bus Already Added = 5
+
 type Location struct {
 	Lat  float64 `json:"lat"`
 	Long float64 `json:"long"`
@@ -67,7 +73,7 @@ func main() {
 		_, has := busOwner[busId]
 		if has {
 			fmt.Println("Already There")
-			conn.WriteMessage(1, []byte("Bus Has Already Registered"))
+			conn.WriteMessage(1, []byte("Status: Bus Already Added"))
 			conn.Close()
 			delete(clients, userId)
 			return
@@ -78,7 +84,7 @@ func main() {
 		}
 		busOwner[busId] = userId
 		busClients[busId] = append(busClients[busId], userId)
-		conn.WriteMessage(1, []byte("Bus Added"))
+		conn.WriteMessage(1, []byte("Status: Bus Added"))
 
 		for {
 			var data BusData
@@ -128,14 +134,14 @@ func main() {
 		busUserId, has := busOwner[busId]
 		if !has {
 			defer conn.Close()
-			conn.WriteMessage(1, []byte("Bus is not Yet Connected"))
+			conn.WriteMessage(1, []byte("Status: Bus is not Connected"))
 			return
 		} else {
 			busConn, has := userClient[busUserId]
 			if !has {
 				fmt.Println("Error in getting the bus Conn")
 			}
-			busConn.WriteMessage(1, []byte("New User is Tracking"))
+			busConn.WriteMessage(1, []byte("Status: User is Tracking"))
 		}
 
 		userClient[userId] = conn
@@ -159,7 +165,7 @@ func main() {
 			Long:  busLocation.Long,
 			Index: 1,
 		})
-		conn.WriteMessage(1, []byte("Connected to the Bus"))
+		conn.WriteMessage(1, []byte("Status: Connected to Bus"))
 
 		for {
 			_, _, err := conn.ReadMessage()
@@ -177,7 +183,7 @@ func main() {
 				if !has {
 					fmt.Println("Error in getting the bus Conn")
 				}
-				busConn.WriteMessage(1, []byte("User Discounted"))
+				busConn.WriteMessage(1, []byte("Status: User Disconnected"))
 				break
 			}
 		}
@@ -192,7 +198,7 @@ func removeBusConns(busId string) {
 		if !has {
 			fmt.Println("Error in getting the bus Conn")
 		}
-		client.WriteMessage(1, []byte("Bus Discounted"))
+		client.WriteMessage(1, []byte("Status: Bus Disconnected"))
 		client.Close()
 		_, locationHas := clientLocation[userId]
 		if locationHas {

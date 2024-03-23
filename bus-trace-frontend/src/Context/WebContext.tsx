@@ -15,6 +15,7 @@ interface WebSocketContextProps {
   connected: boolean
   socket: WebSocket | null
   location: Location
+  customAlert: string
   setBusSocket: (id: string) => void
   setUserSocket: (id: string) => void
   sendMessage: (message: Position) => void
@@ -47,6 +48,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 }) => {
   const [connected, setConnected] = useState(false)
   const [socket, setSocket] = useState<WebSocket | null>(null)
+  const [customAlert, setCustomAlert] = useState<string>('')
   const [location, setLocation] = useState<Location>({
     lat: 0,
     long: 0
@@ -68,7 +70,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (position) => {
-              console.log('Latitude:', position.coords.latitude)
               newSocket.send(
                 JSON.stringify({
                   busId: '1',
@@ -101,6 +102,12 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
     newSocket.addEventListener('message', (event) => {
       console.log('WebSocket message:', event)
+      if (event.data.split(' ')[0] === 'Status:') {
+        setCustomAlert(event.data)
+        setTimeout(() => {
+          setCustomAlert('')
+        }, 5000)
+      }
     })
 
     setSocket(newSocket)
@@ -137,15 +144,16 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           lat: data.lat,
           long: data.long
         })
+      } else if (event.data.split(' ')[0] === 'Status:') {
+        setCustomAlert(event.data)
+        setTimeout(() => {
+          setCustomAlert('')
+        }, 5000)
       }
     })
 
     setSocket(newSocket)
   }
-  // useEffect(() => {
-  //   setBusSocketFn('1')
-  //   // eslint-disable-next-line react-hooks/exhaustive-deps
-  // }, [])
 
   const sendMessage = (message: Position) => {
     console.log(socket?.readyState)
@@ -160,6 +168,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     socket,
     setBusSocket: setBusSocketFn,
     location,
+    customAlert,
     sendMessage,
     setUserSocket: setUserSocketFn
   }
