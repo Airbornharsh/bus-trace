@@ -34,6 +34,12 @@ type BusData struct {
 	Index int     `json:"index"`
 }
 
+type UserData struct {
+	UserId string  `json:"userId"`
+	Lat    float64 `json:"lat"`
+	Long   float64 `json:"long"`
+}
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
@@ -108,6 +114,13 @@ func main() {
 					Long: data.Long,
 				}
 				if isInside(data.Lat, data.Long, clientLoc.Lat, clientLoc.Long) {
+					// if client != userId {
+					// 	conn.WriteJSON(UserData{
+					// 		UserId: userId,
+					// 		Lat:    clientLoc.Lat,
+					// 		Long:   clientLoc.Long,
+					// 	})
+					// }
 					con, has := userClient[client]
 					if has {
 						con.WriteJSON(data)
@@ -146,10 +159,6 @@ func main() {
 
 		userClient[userId] = conn
 		clients[userId] = true
-		clientLocation[userId] = Location{
-			Lat:  19.9235263,
-			Long: 83.1112693,
-		}
 		busClients[busId] = append(busClients[busId], userId)
 		busUserId, busUserIdHas := busOwner[busId]
 		if !busUserIdHas {
@@ -168,7 +177,13 @@ func main() {
 		conn.WriteMessage(1, []byte("Status: Connected to Bus"))
 
 		for {
-			_, _, err := conn.ReadMessage()
+			var loc Location
+			err := conn.ReadJSON(&loc)
+			fmt.Println(loc)
+			busConn, has := userClient[busUserId]
+			if !has {
+				fmt.Println("Error in getting the bus Conn")
+			}
 			if err != nil {
 				delete(clients, userId)
 				delete(clientLocation, userId)
@@ -179,13 +194,18 @@ func main() {
 					}
 				}
 				busClients[busId] = append(busClients[busId][:toRemove], busClients[busId][toRemove+1:]...)
-				busConn, has := userClient[busUserId]
-				if !has {
-					fmt.Println("Error in getting the bus Conn")
-				}
 				busConn.WriteMessage(1, []byte("Status: User Disconnected"))
 				break
 			}
+			clientLocation[userId] = Location{
+				Lat:  loc.Lat,
+				Long: loc.Long,
+			}
+			busConn.WriteJSON(UserData{
+				UserId: userId,
+				Lat:    loc.Lat,
+				Long:   loc.Long,
+			})
 		}
 	})
 

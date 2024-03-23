@@ -30,7 +30,7 @@ const Bus = () => {
 
   useEffect(() => {
     const map = new Map({
-      target: 'map',
+      target: 'user-map',
       layers: [
         new TileLayer({
           source: new XYZ({
@@ -87,7 +87,7 @@ const Bus = () => {
       <p>{'Latitude: ' + location.lat}</p>
       <p>{'Longitude: ' + location.long}</p>
       <div
-        id="map"
+        id="user-map"
         style={{
           width: '90vw',
           height: '50rem',

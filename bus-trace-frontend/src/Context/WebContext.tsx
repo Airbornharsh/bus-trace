@@ -15,6 +15,7 @@ interface WebSocketContextProps {
   connected: boolean
   socket: WebSocket | null
   location: Location
+  userLocations: { [key: string]: Location }
   customAlert: string
   setBusSocket: (id: string) => void
   setUserSocket: (id: string) => void
@@ -40,8 +41,8 @@ interface WebSocketProviderProps {
   children: ReactNode
 }
 
-const WebSocketUrl = 'ws://localhost:8000/ws'
-// const WebSocketUrl = 'wss://bus-trace-websocket-server.onrender.com/ws'
+// const WebSocketUrl = 'ws://localhost:8000/ws'
+const WebSocketUrl = 'wss://bus-trace-websocket-server.onrender.com/ws'
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   children
@@ -53,6 +54,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     lat: 0,
     long: 0
   })
+  const [userLocations, setUserLocations] = useState<{
+    [key: string]: Location
+  }>({})
 
   const setBusSocketFn = (id: string) => {
     console.log('socket Connection')
@@ -102,7 +106,20 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
     newSocket.addEventListener('message', (event) => {
       console.log('WebSocket message:', event)
-      if (event.data.split(' ')[0] === 'Status:') {
+      if (
+        event.data.includes('lat') &&
+        event.data.includes('long') &&
+        event.data.includes('userId')
+      ) {
+        const data = JSON.parse(event.data)
+        setUserLocations((prev) => ({
+          ...prev,
+          [data.userId]: {
+            lat: data.lat,
+            long: data.long
+          }
+        }))
+      } else if (event.data.split(' ')[0] === 'Status:') {
         setCustomAlert(event.data)
         setTimeout(() => {
           setCustomAlert('')
@@ -124,6 +141,46 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     newSocket.addEventListener('open', (event) => {
       setConnected(true)
       console.log('WebSocket connection opened:', event)
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            newSocket.send(
+              JSON.stringify({
+                lat: position.coords.latitude,
+                long: position.coords.longitude
+              })
+            )
+          },
+          (e) => {
+            console.error(e)
+          },
+          { enableHighAccuracy: true }
+        )
+      } else {
+        console.log('Not Supported by Browser')
+        alert('Not supported')
+      }
+      // setInterval(() => {
+      //   if (navigator.geolocation) {
+      //     navigator.geolocation.getCurrentPosition(
+      //       (position) => {
+      //         newSocket.send(
+      //           JSON.stringify({
+      //             lat: position.coords.latitude,
+      //             long: position.coords.longitude
+      //           })
+      //         )
+      //       },
+      //       (e) => {
+      //         console.error(e)
+      //       },
+      //       { enableHighAccuracy: true }
+      //     )
+      //   } else {
+      //     console.log('Not Supported by Browser')
+      //     alert('Not supported')
+      //   }
+      // }, 5000)
     })
 
     newSocket.addEventListener('close', (event) => {
@@ -168,6 +225,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     socket,
     setBusSocket: setBusSocketFn,
     location,
+    userLocations,
     customAlert,
     sendMessage,
     setUserSocket: setUserSocketFn
