@@ -82,7 +82,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           console.log('Not Supported by Browser')
           alert('Not supported')
         }
-      }, 2000)
+      }, 5000)
     })
 
     newSocket.addEventListener('close', (event) => {
