@@ -16,12 +16,6 @@ var busOwner = make(map[string]string)
 var clientLocation = make(map[string]Location)
 var userClient = make(map[string]*websocket.Conn)
 
-// Bus Connected = 1
-// Bus Disconnected = 2
-// User Connected = 3
-// User Disconnected = 4
-// Bus Already Added = 5
-
 type Location struct {
 	Lat  float64 `json:"lat"`
 	Long float64 `json:"long"`
@@ -155,57 +149,60 @@ func main() {
 				fmt.Println("Error in getting the bus Conn")
 			}
 			busConn.WriteMessage(1, []byte("Status: User is Tracking"))
-		}
 
-		userClient[userId] = conn
-		clients[userId] = true
-		busClients[busId] = append(busClients[busId], userId)
-		busUserId, busUserIdHas := busOwner[busId]
-		if !busUserIdHas {
-			fmt.Println("Not Found Bus User Id")
-		}
-		busLocation, busLocationHas := clientLocation[busUserId]
-		if !busLocationHas {
-			fmt.Println("No Bus Location Found")
-		}
-		conn.WriteJSON(BusData{
-			BusId: busId,
-			Lat:   busLocation.Lat,
-			Long:  busLocation.Long,
-			Index: 1,
-		})
-		conn.WriteMessage(1, []byte("Status: Connected to Bus"))
-
-		for {
-			var loc Location
-			err := conn.ReadJSON(&loc)
-			fmt.Println(loc)
-			busConn, has := userClient[busUserId]
-			if !has {
-				fmt.Println("Error in getting the bus Conn")
+			userClient[userId] = conn
+			clients[userId] = true
+			busClients[busId] = append(busClients[busId], userId)
+			busUserId, busUserIdHas := busOwner[busId]
+			if !busUserIdHas {
+				fmt.Println("Not Found Bus User Id")
 			}
-			if err != nil {
-				delete(clients, userId)
-				delete(clientLocation, userId)
-				var toRemove int
-				for i, v := range busClients[busId] {
-					if v == userId {
-						toRemove = i
-					}
-				}
-				busClients[busId] = append(busClients[busId][:toRemove], busClients[busId][toRemove+1:]...)
-				busConn.WriteMessage(1, []byte("Status: User Disconnected"))
-				break
+			busLocation, busLocationHas := clientLocation[busUserId]
+			if !busLocationHas {
+				fmt.Println("No Bus Location Found")
 			}
-			clientLocation[userId] = Location{
-				Lat:  loc.Lat,
-				Long: loc.Long,
-			}
-			busConn.WriteJSON(UserData{
-				UserId: userId,
-				Lat:    loc.Lat,
-				Long:   loc.Long,
+			conn.WriteJSON(BusData{
+				BusId: busId,
+				Lat:   busLocation.Lat,
+				Long:  busLocation.Long,
+				Index: 1,
 			})
+			conn.WriteMessage(1, []byte("Status: Connected to Bus"))
+			busConn.WriteJSON(busClients[busId])
+
+			for {
+				var loc Location
+				err := conn.ReadJSON(&loc)
+				fmt.Println(loc)
+				busConn, has := userClient[busUserId]
+				if !has {
+					fmt.Println("Error in getting the bus Conn")
+				}
+				if err != nil {
+					delete(clients, userId)
+					delete(clientLocation, userId)
+					var toRemove int
+					for i, v := range busClients[busId] {
+						if v == userId {
+							toRemove = i
+						}
+					}
+					tempSlice := append(busClients[busId][:toRemove], busClients[busId][toRemove+1:]...)
+					busClients[busId] = tempSlice
+					busConn.WriteMessage(1, []byte("Status: User Disconnected"))
+					busConn.WriteJSON(tempSlice)
+					break
+				}
+				clientLocation[userId] = Location{
+					Lat:  loc.Lat,
+					Long: loc.Long,
+				}
+				busConn.WriteJSON(UserData{
+					UserId: userId,
+					Lat:    loc.Lat,
+					Long:   loc.Long,
+				})
+			}
 		}
 	})
 

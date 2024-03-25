@@ -5,23 +5,24 @@ import Map from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
 import XYZ from 'ol/source/XYZ'
-// import Feature from 'ol/Feature'
-// import Point from 'ol/geom/Point'
+import Feature from 'ol/Feature'
+import Point from 'ol/geom/Point'
 import { fromLonLat } from 'ol/proj'
-// import { Vector as VectorLayer } from 'ol/layer'
-// import { Vector as VectorSource } from 'ol/source'
+import { Vector as VectorLayer } from 'ol/layer'
+import { Vector as VectorSource } from 'ol/source'
 
 const Bus = () => {
   const [map, setMap] = useState<Map | null>(null)
-  const [zoom, setZoom] = useState(12)
+  const [zoom, setZoom] = useState(16)
   const [load, setLoad] = useState(false)
-  const { customAlert, userLocations, connected, setBusSocket } = useWebSocket()
+  const { customAlert, userLocations, userList, connected, setBusSocket } =
+    useWebSocket()
 
   const params = useParams()
 
   useEffect(() => {
-    if (!load) {
-      setBusSocket(params.busId || '1')
+    if (!load && params.busId && params.userId) {
+      setBusSocket(params.userId, params.busId)
       setLoad(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -39,19 +40,20 @@ const Bus = () => {
       ]
     })
 
-    // Object.keys(userLocations).forEach((key) => {
-    //   const marker = new Feature({
-    //     geometry: new Point(fromLonLat([84.8535844, 22.260423]))
-    //   })
+    const tempMarkers: Feature<Point>[] = []
+    Object.keys(userLocations).forEach(() => {
+      const marker = new Feature({
+        geometry: new Point(fromLonLat([84.8535844, 22.260423]))
+      })
+      tempMarkers.push(marker)
+    })
+    const vectorLayer = new VectorLayer({
+      source: new VectorSource({
+        features: [...tempMarkers]
+      })
+    })
 
-    //   const vectorLayer = new VectorLayer({
-    //     source: new VectorSource({
-    //       features: [marker]
-    //     })
-    //   })
-
-    //   map?.addLayer(vectorLayer)
-    // })
+    map?.addLayer(vectorLayer)
 
     map?.getView().on('change:resolution', () => {
       const newZoom = map?.getView().getZoom()
@@ -73,10 +75,15 @@ const Bus = () => {
   }, [location, map, zoom])
 
   return (
-    <div>
+    <div className="flex flex-col justify-center items-center">
       <h2>Admin</h2>
       <p>{connected ? 'Connected' : 'Disconnected'}</p>
       <p>{customAlert}</p>
+      <ul>
+        {userList.map((user) => (
+          <li key={user}>{user}</li>
+        ))}
+      </ul>
       <div
         id="bus-map"
         style={{

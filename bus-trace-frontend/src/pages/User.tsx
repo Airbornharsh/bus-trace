@@ -14,15 +14,15 @@ import { Vector as VectorSource } from 'ol/source'
 const Bus = () => {
   const [map, setMap] = useState<Map | null>(null)
   const [oldMarker, setOldMarker] = useState<Feature | null>(null)
-  const [zoom, setZoom] = useState(12)
+  const [zoom, setZoom] = useState(16)
   const [load, setLoad] = useState(false)
   const { connected, customAlert, setUserSocket, location } = useWebSocket()
 
   const params = useParams()
 
   useEffect(() => {
-    if (!load) {
-      setUserSocket(params.busId || '1')
+    if (!load && params.busId && params.userId) {
+      setUserSocket(params.userId, params.busId)
       setLoad(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

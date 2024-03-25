@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
+import { validate } from '../helpers/Json'
 
 interface Position {
   busId: string
@@ -16,9 +17,10 @@ interface WebSocketContextProps {
   socket: WebSocket | null
   location: Location
   userLocations: { [key: string]: Location }
+  userList: string[]
   customAlert: string
-  setBusSocket: (id: string) => void
-  setUserSocket: (id: string) => void
+  setBusSocket: (userId: string, busId: string) => void
+  setUserSocket: (userId: string, busId: string) => void
   sendMessage: (message: Position) => void
 }
 
@@ -41,8 +43,8 @@ interface WebSocketProviderProps {
   children: ReactNode
 }
 
-// const WebSocketUrl = 'ws://localhost:8000/ws'
-const WebSocketUrl = 'wss://bus-trace-websocket-server.onrender.com/ws'
+const WebSocketUrl = 'ws://localhost:8000/ws'
+// const WebSocketUrl = 'wss://bus-trace-websocket-server.onrender.com/ws'
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   children
@@ -57,14 +59,15 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const [userLocations, setUserLocations] = useState<{
     [key: string]: Location
   }>({})
+  const [userList, setUserList] = useState<string[]>([])
 
-  const setBusSocketFn = (id: string) => {
+  const setBusSocketFn = (userId: string, busId: string) => {
     console.log('socket Connection')
     if (socket) {
       socket.close()
     }
 
-    const newSocket = new WebSocket(`${WebSocketUrl}/bus/1/${id}`)
+    const newSocket = new WebSocket(`${WebSocketUrl}/bus/${userId}/${busId}`)
 
     newSocket.addEventListener('open', (event) => {
       setConnected(true)
@@ -106,19 +109,24 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
     newSocket.addEventListener('message', (event) => {
       console.log('WebSocket message:', event)
-      if (
-        event.data.includes('lat') &&
-        event.data.includes('long') &&
-        event.data.includes('userId')
-      ) {
-        const data = JSON.parse(event.data)
-        setUserLocations((prev) => ({
-          ...prev,
-          [data.userId]: {
-            lat: data.lat,
-            long: data.long
-          }
-        }))
+      if (validate(event.data)) {
+        if (
+          event.data.includes('lat') &&
+          event.data.includes('long') &&
+          event.data.includes('userId')
+        ) {
+          const data = JSON.parse(event.data)
+          setUserLocations((prev) => ({
+            ...prev,
+            [data.userId]: {
+              lat: data.lat,
+              long: data.long
+            }
+          }))
+        } else {
+          const data = JSON.parse(event.data)
+          setUserList(data || [])
+        }
       } else if (event.data.split(' ')[0] === 'Status:') {
         setCustomAlert(event.data)
         setTimeout(() => {
@@ -130,13 +138,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     setSocket(newSocket)
   }
 
-  const setUserSocketFn = (id: string) => {
+  const setUserSocketFn = (userId: string, busId: string) => {
     console.log('socket Connection')
     if (socket) {
       socket.close()
     }
 
-    const newSocket = new WebSocket(`${WebSocketUrl}/user/2/${id}`)
+    const newSocket = new WebSocket(`${WebSocketUrl}/user/${userId}/${busId}`)
 
     newSocket.addEventListener('open', (event) => {
       setConnected(true)
@@ -226,6 +234,7 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     setBusSocket: setBusSocketFn,
     location,
     userLocations,
+    userList,
     customAlert,
     sendMessage,
     setUserSocket: setUserSocketFn
