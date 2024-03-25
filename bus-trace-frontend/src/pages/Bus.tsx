@@ -10,23 +10,25 @@ import Point from 'ol/geom/Point'
 import { fromLonLat } from 'ol/proj'
 import { Vector as VectorLayer } from 'ol/layer'
 import { Vector as VectorSource } from 'ol/source'
+import { useAuth } from '../Context/AuthContext'
 
 const Bus = () => {
   const [map, setMap] = useState<Map | null>(null)
   const [zoom, setZoom] = useState(16)
   const [load, setLoad] = useState(false)
+  const { user } = useAuth()
   const { customAlert, userLocations, userList, connected, setBusSocket } =
     useWebSocket()
 
   const params = useParams()
 
   useEffect(() => {
-    if (!load && params.busId && params.userId) {
-      setBusSocket(params.userId, params.busId)
+    if (!load && params.busId && user) {
+      setBusSocket(params.busId)
       setLoad(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.busId])
+  }, [params.busId, user])
 
   useEffect(() => {
     const map = new Map({
@@ -80,7 +82,7 @@ const Bus = () => {
       <p>{connected ? 'Connected' : 'Disconnected'}</p>
       <p>{customAlert}</p>
       <ul>
-        {userList.map((user) => (
+        {(userList.length > 0 ? userList : []).map((user) => (
           <li key={user}>{user}</li>
         ))}
       </ul>

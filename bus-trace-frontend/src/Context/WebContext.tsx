@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 import { validate } from '../helpers/Json'
+import { useAuth } from './AuthContext'
 
 interface Position {
   busId: string
@@ -19,8 +20,8 @@ interface WebSocketContextProps {
   userLocations: { [key: string]: Location }
   userList: string[]
   customAlert: string
-  setBusSocket: (userId: string, busId: string) => void
-  setUserSocket: (userId: string, busId: string) => void
+  setBusSocket: (busId: string) => void
+  setUserSocket: (busId: string) => void
   sendMessage: (message: Position) => void
 }
 
@@ -49,6 +50,7 @@ const WebSocketUrl = 'ws://localhost:8000/ws'
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   children
 }) => {
+  const { user } = useAuth()
   const [connected, setConnected] = useState(false)
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [customAlert, setCustomAlert] = useState<string>('')
@@ -61,13 +63,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   }>({})
   const [userList, setUserList] = useState<string[]>([])
 
-  const setBusSocketFn = (userId: string, busId: string) => {
+  const setBusSocketFn = (busId: string) => {
     console.log('socket Connection')
     if (socket) {
       socket.close()
     }
 
-    const newSocket = new WebSocket(`${WebSocketUrl}/bus/${userId}/${busId}`)
+    const newSocket = new WebSocket(`${WebSocketUrl}/bus/${user?.id}/${busId}`)
 
     newSocket.addEventListener('open', (event) => {
       setConnected(true)
@@ -138,13 +140,13 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     setSocket(newSocket)
   }
 
-  const setUserSocketFn = (userId: string, busId: string) => {
+  const setUserSocketFn = (busId: string) => {
     console.log('socket Connection')
     if (socket) {
       socket.close()
     }
 
-    const newSocket = new WebSocket(`${WebSocketUrl}/user/${userId}/${busId}`)
+    const newSocket = new WebSocket(`${WebSocketUrl}/user/${user?.id}/${busId}`)
 
     newSocket.addEventListener('open', (event) => {
       setConnected(true)
