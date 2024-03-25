@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/airbornharsh/bus-trace/http-server/pkg/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -24,5 +25,7 @@ func DbInit() {
 	} else {
 		DB = db
 		fmt.Println("Connected")
+		db.AutoMigrate(&models.User{})
+		db.AutoMigrate(&models.Bus{})
 	}
 }
