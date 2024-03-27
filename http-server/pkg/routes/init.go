@@ -1,6 +1,9 @@
 package routes
 
-import "github.com/gin-gonic/gin"
+import (
+	"github.com/airbornharsh/bus-trace/http-server/pkg/handlers"
+	"github.com/gin-gonic/gin"
+)
 
 func RouteInit(r *gin.Engine) {
 	r.GET("/", func(c *gin.Context) {
@@ -10,4 +13,10 @@ func RouteInit(r *gin.Engine) {
 			},
 		)
 	})
+
+	// busRoutes := r.Group("bus")
+	userRoutes := r.Group("user")
+
+	userRoutes.POST("/", handlers.CreateUser)
+	userRoutes.GET("/", handlers.GetUser)
 }
