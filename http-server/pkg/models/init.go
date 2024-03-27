@@ -17,7 +17,6 @@ type User struct {
 
 type Bus struct {
 	gorm.Model
-	ID     string  `gorm:"unique"`
-	Name   string  `json:"name"`
-	Owners []*User `json:"owners"`
+	ID     string   `gorm:"unique"`
+	Name   string   `json:"name"`
 }

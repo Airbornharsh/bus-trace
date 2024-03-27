@@ -7,10 +7,11 @@ import (
 	"github.com/airbornharsh/bus-trace/http-server/pkg/helpers"
 	"github.com/airbornharsh/bus-trace/http-server/pkg/models"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
-func CreateUser(c *gin.Context) {
-	code, uid, err := helpers.TokenToUid2(c)
+func BusCreate(c *gin.Context) {
+	code, tempUser, err := helpers.TokenToUid(c)
 	if code != 0 && err != nil {
 		c.JSON(code, gin.H{
 			"message": err.Error(),
@@ -18,15 +19,23 @@ func CreateUser(c *gin.Context) {
 		return
 	}
 
-	var user *models.User
-	err = c.ShouldBindJSON(&user)
+	var bus *models.Bus
+	err = c.ShouldBindJSON(&bus)
 	if err != nil {
 		fmt.Println("Unable to marse the Json")
 	}
 
-	user.ID = uid
-	result := db.DB.Create(&user)
+	bus.ID = uuid.New().String()
+	result := db.DB.Create(&bus)
+	if result.Error != nil {
+		fmt.Println("Error in Creating", result.Error)
+		c.JSON(500, gin.H{
+			"message": result.Error,
+		})
+		return
+	}
 
+	result = db.DB.Model(&models.User{}).Where("id = ?", tempUser.ID).Update("bus_id", bus.ID).Update("bus_owner", true)
 	if result.Error != nil {
 		fmt.Println("Error in Creating", result.Error)
 		c.JSON(500, gin.H{
@@ -36,32 +45,7 @@ func CreateUser(c *gin.Context) {
 	}
 
 	c.JSON(200, gin.H{
-		"message": "User Created",
-	})
-}
-
-func GetUser(c *gin.Context) {
-	code, tempUser, err := helpers.TokenToUid(c)
-	if code != 0 && err != nil {
-		c.JSON(code, gin.H{
-			"message": err.Error(),
-		})
-		return
-	}
-
-	var user *models.User
-	result := db.DB.Model(&models.User{}).First(&user, "id = ?", tempUser.ID)
-
-	if result.Error != nil {
-		fmt.Println("Error in Getting", result.Error)
-		c.JSON(500, gin.H{
-			"message": result.Error,
-		})
-		return
-	}
-
-	c.JSON(200, gin.H{
-		"message": "Got the User",
-		"user":    user,
+		"message": "Bus Created",
+		"bus":     bus,
 	})
 }

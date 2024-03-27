@@ -27,5 +27,6 @@ func DbInit() {
 		fmt.Println("Connected")
 		db.AutoMigrate(&models.User{})
 		db.AutoMigrate(&models.Bus{})
+		// db.Migrator().DropTable(&models.User{}, &models.Bus{})
 	}
 }
