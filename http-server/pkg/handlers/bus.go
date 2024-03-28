@@ -96,6 +96,7 @@ func SearchBus(c *gin.Context) {
 		return
 	}
 
+	fmt.Println(buses)
 	tx.Commit()
 	c.JSON(200, gin.H{
 		"message": "Bus List",
