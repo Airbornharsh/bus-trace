@@ -11,7 +11,7 @@ type User struct {
 	Email    string `json:"email" gorm:"unique"`
 	Phone    string `json:"phone" gorm:"unique"`
 	BusOwner bool   `json:"busOwner"`
-	BusID    *uint
+	BusID    *string
 	Bus      *Bus `gorm:"foreignKey:BusID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"  json:"bus,omitempty"`
 }
 

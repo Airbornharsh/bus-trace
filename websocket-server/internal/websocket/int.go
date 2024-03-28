@@ -11,6 +11,7 @@ var BusClients = make(map[string][]string)
 var Clients = make(map[string]bool)
 var BusOwner = make(map[string]string)
 var ClientLocation = make(map[string]types.Location)
+var BusLocation = make(map[string]types.Location)
 var UserClient = make(map[string]*websocket.Conn)
 
 var Upgrader = websocket.Upgrader{

@@ -17,18 +17,18 @@ const Bus = () => {
   const [oldMarker, setOldMarker] = useState<Feature | null>(null)
   const [zoom, setZoom] = useState(16)
   const [load, setLoad] = useState(false)
-  const { user } = useAuth()
+  const { session } = useAuth()
   const { connected, customAlert, setUserSocket, location } = useWebSocket()
 
   const params = useParams()
 
   useEffect(() => {
-    if (!load && params.busId && user) {
+    if (!load && params.busId && session?.user) {
       setUserSocket(params.busId)
       setLoad(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.busId, user])
+  }, [params.busId, session])
 
   useEffect(() => {
     const map = new Map({

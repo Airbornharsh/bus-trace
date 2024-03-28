@@ -16,19 +16,19 @@ const Bus = () => {
   const [map, setMap] = useState<Map | null>(null)
   const [zoom, setZoom] = useState(16)
   const [load, setLoad] = useState(false)
-  const { user } = useAuth()
+  const { session } = useAuth()
   const { customAlert, userLocations, userList, connected, setBusSocket } =
     useWebSocket()
 
   const params = useParams()
 
   useEffect(() => {
-    if (!load && params.busId && user) {
-      setBusSocket(params.busId)
+    if (!load && session?.user) {
+      setBusSocket()
       setLoad(true)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [params.busId, user])
+  }, [params.busId, session])
 
   useEffect(() => {
     const map = new Map({

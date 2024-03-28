@@ -5,6 +5,7 @@ import (
 
 	"github.com/airbornharsh/bus-trace/websocket-server/internal/websocket"
 	"github.com/airbornharsh/bus-trace/websocket-server/pkg/Types"
+	"github.com/airbornharsh/bus-trace/websocket-server/pkg/helpers"
 	"github.com/gin-gonic/gin"
 )
 
@@ -13,10 +14,17 @@ func UserSocket(c *gin.Context) {
 	if !busOk {
 		fmt.Println("Didn't get the Bus Id")
 	}
-	userId, userOk := c.Params.Get("userId")
-	if !userOk {
-		fmt.Println("Didn't got the User Id")
+	token, tokenOk := c.Params.Get("token")
+	fmt.Println(token)
+	if !tokenOk {
+		fmt.Println("Didn't got the Token")
 	}
+	user, err := helpers.TokenToUid(token)
+	if err != nil && user.ID == "" {
+		fmt.Println("Parsing the Token Failed")
+		return
+	}
+	userId := user.ID
 	conn, err := websocket.Upgrader.Upgrade(c.Writer, c.Request, c.Writer.Header())
 	if err != nil {
 		fmt.Println(err.Error())

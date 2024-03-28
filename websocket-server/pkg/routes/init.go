@@ -14,6 +14,6 @@ func RouteInit(r *gin.Engine) {
 
 	ws := r.Group("/ws")
 
-	ws.GET("/bus/:userId/:busId", handlers.BusSocket)
-	ws.GET("/user/:userId/:busId", handlers.UserSocket)
+	ws.GET("/bus/:token", handlers.BusSocket)
+	ws.GET("/user/:busId/:token", handlers.UserSocket)
 }

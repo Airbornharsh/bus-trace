@@ -6,11 +6,11 @@ import React, {
   useEffect
 } from 'react'
 import { supabase } from '../helpers/Supabase'
-import { User } from '@supabase/supabase-js'
+import { Session } from '@supabase/supabase-js'
 
 interface AuthContextProps {
   authenticated: boolean
-  user: User | null
+  session: Session | null
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined)
@@ -32,11 +32,11 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [authenticated, setAuthenticated] = useState(false)
-  const [user, setUser] = useState<User | null>(null)
+  const [session, setSession] = useState<Session | null>(null)
 
   const contextValue: AuthContextProps = {
     authenticated,
-    user
+    session
   }
 
   useEffect(() => {
@@ -45,10 +45,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Session:', session)
       if (event === 'SIGNED_IN') {
         setAuthenticated(true)
-        setUser(session?.user || null)
+        setSession(session)
       } else {
         setAuthenticated(false)
-        setUser(null)
+        setSession(null)
       }
     })
   }, [])

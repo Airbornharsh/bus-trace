@@ -20,7 +20,7 @@ interface WebSocketContextProps {
   userLocations: { [key: string]: Location }
   userList: string[]
   customAlert: string
-  setBusSocket: (busId: string) => void
+  setBusSocket: () => void
   setUserSocket: (busId: string) => void
   sendMessage: (message: Position) => void
 }
@@ -50,7 +50,7 @@ const WebSocketUrl = 'ws://localhost:8000/ws'
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   children
 }) => {
-  const { user } = useAuth()
+  const { session } = useAuth()
   const [connected, setConnected] = useState(false)
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [customAlert, setCustomAlert] = useState<string>('')
@@ -63,13 +63,14 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   }>({})
   const [userList, setUserList] = useState<string[]>([])
 
-  const setBusSocketFn = (busId: string) => {
+  const setBusSocketFn = () => {
     console.log('socket Connection')
     if (socket) {
       socket.close()
     }
-
-    const newSocket = new WebSocket(`${WebSocketUrl}/bus/${user?.id}/${busId}`)
+    const newSocket = new WebSocket(
+      `${WebSocketUrl}/bus/${session?.access_token}`
+    )
 
     newSocket.addEventListener('open', (event) => {
       setConnected(true)
@@ -146,7 +147,9 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       socket.close()
     }
 
-    const newSocket = new WebSocket(`${WebSocketUrl}/user/${user?.id}/${busId}`)
+    const newSocket = new WebSocket(
+      `${WebSocketUrl}/user/${busId}/${session?.access_token}`
+    )
 
     newSocket.addEventListener('open', (event) => {
       setConnected(true)
