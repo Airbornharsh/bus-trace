@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 
 	"github.com/airbornharsh/bus-trace/http-server/internal/db"
 	"github.com/airbornharsh/bus-trace/http-server/pkg/routes"
@@ -26,6 +27,10 @@ func main() {
 	r.Use(cors.New(config))
 
 	db.DbInit()
+
+	r.HEAD("/", func(c *gin.Context) {
+		c.Status(http.StatusOK)
+	})
 
 	routes.RouteInit(r)
 
