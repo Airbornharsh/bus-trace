@@ -17,6 +17,9 @@ const App = () => {
     supabase.auth.onAuthStateChange((event, session) => {
       console.log('Event:', event)
       console.log('Session:', session)
+      if (!session?.user) {
+        window.location.href = '/login'
+      }
     })
   }, [])
   return (
