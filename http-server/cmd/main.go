@@ -26,5 +26,8 @@ func main() {
 
 	routes.RouteInit(r)
 
-	r.Run(":8001")
+	go func() {
+		r.Run(":8001")
+	}()
+	select {}
 }
