@@ -35,16 +35,29 @@ func BusSocket(c *gin.Context) {
 	if has {
 		fmt.Println("Already There")
 		conn.WriteMessage(1, []byte("Status: Bus Already Added"))
-		conn.Close()
-		delete(websocket.Clients, userId)
-		return
+		// conn.Close()
+		// delete(websocket.Clients, userId)
+		// return
 	} else {
 		defer delete(websocket.BusOwner, busId)
 		defer helpers.RemoveBusConns(busId)
 		defer delete(websocket.BusClients, busId)
 	}
 	websocket.BusOwner[busId] = userId
-	websocket.BusClients[busId] = append(websocket.BusClients[busId], userId)
+	if clients, ok := websocket.BusClients[busId]; !ok {
+		websocket.BusClients[busId] = []string{userId}
+	} else {
+		var found bool
+		for _, id := range clients {
+			if id == userId {
+				found = true
+				break
+			}
+		}
+		if !found {
+			websocket.BusClients[busId] = append(websocket.BusClients[busId], userId)
+		}
+	}
 	websocket.BusLocation[busId] = types.Location{
 		Lat:  0,
 		Long: 0,
