@@ -13,7 +13,7 @@ import (
 
 func main() {
 	gin.SetMode(gin.ReleaseMode)
-	r := gin.Default()
+	r := gin.New()
 
 	err := godotenv.Load(".env")
 	if err != nil {
