@@ -17,6 +17,8 @@ type User struct {
 
 type Bus struct {
 	gorm.Model
-	ID     string   `gorm:"unique"`
-	Name   string   `json:"name"`
+	ID   string  `gorm:"unique"`
+	Name string  `json:"name"`
+	Lat  float64 `json:"lat"`
+	Long float64 `json:"long"`
 }
