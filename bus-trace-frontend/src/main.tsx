@@ -3,11 +3,14 @@ import App from './App.tsx'
 import './index.css'
 import { WebSocketProvider } from './Context/WebContext.tsx'
 import { AuthProvider } from './Context/AuthContext.tsx'
+import { HttpProvider } from './Context/HttpContext.tsx'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <AuthProvider>
-    <WebSocketProvider>
-      <App />
-    </WebSocketProvider>
+    <HttpProvider>
+      <WebSocketProvider>
+        <App />
+      </WebSocketProvider>
+    </HttpProvider>
   </AuthProvider>
 )

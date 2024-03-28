@@ -75,11 +75,11 @@ func BusCreate(c *gin.Context) {
 
 func SearchBus(c *gin.Context) {
 	tx := db.DB.Begin()
-	code, _, err := helpers.TokenToUid(c)
-	if code != 0 && err != nil {
+	code, user, _ := helpers.TokenToUid(c)
+	if user == nil {
 		tx.Rollback()
 		c.JSON(code, gin.H{
-			"message": err.Error(),
+			"message": "Error While Parsing the Data",
 		})
 		return
 	}

@@ -15,7 +15,6 @@ func UserSocket(c *gin.Context) {
 		fmt.Println("Didn't get the Bus Id")
 	}
 	token, tokenOk := c.Params.Get("token")
-	fmt.Println(token)
 	if !tokenOk {
 		fmt.Println("Didn't got the Token")
 	}

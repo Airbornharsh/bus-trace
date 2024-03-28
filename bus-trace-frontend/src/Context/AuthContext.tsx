@@ -41,9 +41,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Event:', event)
-      console.log('Session:', session)
-      if (event === 'SIGNED_IN') {
+      if (
+        event === 'SIGNED_IN' ||
+        event === 'USER_UPDATED' ||
+        event === 'INITIAL_SESSION' ||
+        event === 'PASSWORD_RECOVERY' ||
+        event === 'TOKEN_REFRESHED'
+      ) {
         setAuthenticated(true)
         setSession(session)
       } else {

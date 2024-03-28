@@ -1,6 +1,7 @@
 package helpers
 
 import (
+	"fmt"
 	"os"
 	"strings"
 
@@ -14,6 +15,7 @@ import (
 func TokenToUid(c *gin.Context) (int, *models.User, error) {
 	var user *models.User
 	authorization := c.Request.Header.Get("Authorization")
+	fmt.Println("Data")
 	if authorization == "" {
 		return 401, user, nil
 	}
@@ -27,6 +29,8 @@ func TokenToUid(c *gin.Context) (int, *models.User, error) {
 		return []byte(jwtSecret), nil
 	})
 	if err != nil {
+		fmt.Println(tokenString)
+		fmt.Println(err)
 		return 403, user, err
 	}
 	if !token.Valid {

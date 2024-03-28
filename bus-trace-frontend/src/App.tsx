@@ -4,24 +4,8 @@ import User from './pages/User'
 import Bus from './pages/Bus'
 import SignUp from './pages/SignUp'
 import Login from './pages/Login'
-import { useEffect } from 'react'
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  import.meta.env.VITE_APP_PROJECT_LINK,
-  import.meta.env.VITE_APP_ANON_KEY
-)
 
 const App = () => {
-  useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Event:', event)
-      console.log('Session:', session)
-      if (!session?.user) {
-        window.location.href = '/login'
-      }
-    })
-  }, [])
   return (
     <BrowserRouter>
       <Routes>

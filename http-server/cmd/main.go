@@ -19,7 +19,8 @@ func main() {
 	}
 
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:5173"}
+	config.AllowOrigins = []string{"*"}
+	config.AllowHeaders = []string{"Authorization", "content-type"}
 	r.Use(cors.New(config))
 
 	db.DbInit()
