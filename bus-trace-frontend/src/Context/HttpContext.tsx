@@ -33,13 +33,11 @@ export const HttpProvider: React.FC<HttpProviderProps> = ({ children }) => {
 
   const loadBusList = async (s: string) => {
     try {
-      console.log(session?.access_token)
       const res = await axios.get(`${httpUrl}/bus?search=${s}`, {
         headers: {
           Authorization: 'bearer ' + session?.access_token
         }
       })
-      console.log(res.data)
       setBusList(res.data.buses)
     } catch (e) {
       console.log(e)

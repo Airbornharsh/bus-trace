@@ -15,7 +15,6 @@ import (
 func TokenToUid(c *gin.Context) (int, *models.User, error) {
 	var user *models.User
 	authorization := c.Request.Header.Get("Authorization")
-	fmt.Println("Data")
 	if authorization == "" {
 		return 401, user, nil
 	}

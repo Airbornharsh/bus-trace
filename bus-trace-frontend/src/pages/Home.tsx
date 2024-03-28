@@ -4,7 +4,7 @@ import { useHttp } from '../Context/HttpContext'
 import { useAuth } from '../Context/AuthContext'
 
 const Home = () => {
-  const { session } = useAuth()
+  const { userData, session } = useAuth()
   const { loadBusList, busList } = useHttp()
   const [search, setSearch] = useState<string>('')
   const [loading, setLoading] = useState<boolean>(false)
@@ -28,36 +28,42 @@ const Home = () => {
             onChange={(e) => setSearch(e.target.value)}
             className="bg-gray-100 px-2 h-8 outline-none"
           />
-          <button
-            className="px-2 h-8 bg-gray-500 text-white"
-            onClick={(e) => {
-              e.preventDefault()
-              Navigate('/bus')
-            }}
-          >
-            Admin
-          </button>
+          {userData?.busOwner && (
+            <button
+              className="px-2 h-8 bg-gray-500 text-white"
+              onClick={(e) => {
+                e.preventDefault()
+                Navigate('/bus')
+              }}
+            >
+              Admin
+            </button>
+          )}
         </form>
         <div>
           {loading ? (
-            <div className=""></div>
+            <div className="spinner"></div>
           ) : (
             <ul className="flex flex-wrap">
-              {busList.map((b) => {
-                return (
-                  <li
-                    key={`${b.ID + '-homePage-List'}`}
-                    onClick={() => {
-                      Navigate(`/user/${b.ID}`)
-                    }}
-                    className="w-64 h-32 bg-gray-100 rounded p-2"
-                  >
-                    <h3>{b.name}</h3>
-                    <p>Lat: {b.lat}</p>
-                    <p>Long: {b.long}</p>
-                  </li>
-                )
-              })}
+              {busList.length > 0 ? (
+                busList.map((b) => {
+                  return (
+                    <li
+                      key={`${b.ID + '-homePage-List'}`}
+                      onClick={() => {
+                        Navigate(`/user/${b.ID}`)
+                      }}
+                      className="w-64 h-32 bg-gray-100 rounded p-2"
+                    >
+                      <h3>{b.name}</h3>
+                      <p>Lat: {b.lat}</p>
+                      <p>Long: {b.long}</p>
+                    </li>
+                  )
+                })
+              ) : (
+                <div>No Bus Found</div>
+              )}
             </ul>
           )}
         </div>

@@ -20,7 +20,7 @@ func main() {
 
 	config := cors.DefaultConfig()
 	config.AllowOrigins = []string{"*"}
-	config.AllowHeaders = []string{"Authorization", "content-type"}
+	config.AllowHeaders = []string{"*"}
 	r.Use(cors.New(config))
 
 	db.DbInit()

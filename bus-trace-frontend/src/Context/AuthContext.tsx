@@ -7,10 +7,13 @@ import React, {
 } from 'react'
 import { supabase } from '../helpers/Supabase'
 import { Session } from '@supabase/supabase-js'
+import { User } from '../types/user'
+import axios from 'axios'
 
 interface AuthContextProps {
   authenticated: boolean
   session: Session | null
+  userData: User | null
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined)
@@ -33,24 +36,30 @@ interface AuthProviderProps {
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [authenticated, setAuthenticated] = useState(false)
   const [session, setSession] = useState<Session | null>(null)
+  const [userData, setUserData] = useState<User | null>(null)
 
   const contextValue: AuthContextProps = {
     authenticated,
-    session
+    session,
+    userData
   }
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((event, session) => {
-      if (
-        event === 'SIGNED_IN' ||
-        event === 'USER_UPDATED' ||
-        event === 'INITIAL_SESSION' ||
-        event === 'PASSWORD_RECOVERY' ||
-        event === 'TOKEN_REFRESHED'
-      ) {
+    supabase.auth.onAuthStateChange(async (_, session) => {
+      if (session) {
+        const res = await axios.get(
+          `${import.meta.env.VITE_APP_HTTP_SERVER_LINK}/user`,
+          {
+            headers: {
+              Authorization: 'bearer ' + session?.access_token
+            }
+          }
+        )
+        setUserData(res.data.user)
         setAuthenticated(true)
         setSession(session)
       } else {
+        setUserData(null)
         setAuthenticated(false)
         setSession(null)
       }
