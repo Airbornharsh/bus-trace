@@ -11,10 +11,12 @@ import (
 )
 
 func main() {
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.New()
 
 	err := godotenv.Load(".env")
 	if err != nil {
+		fmt.Println(err)
 		fmt.Println("Error in Loading Env File")
 	}
 
@@ -25,8 +27,5 @@ func main() {
 	db.DBInit()
 	routes.RouteInit(r)
 
-	go func() {
-		r.Run(":8000")
-	}()
-	select {}
+	r.Run(":8000")
 }
