@@ -40,7 +40,7 @@ func main() {
 
 	fmt.Println("Routes")
 
-	r.Run(":8001")
+	r.Run("0.0.0.0:8001")
 }
 
 func CorsMiddleware() gin.HandlerFunc {
