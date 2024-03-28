@@ -29,5 +29,7 @@ func main() {
 
 	routes.RouteInit(r)
 
+	fmt.Println("Routes")
+
 	r.Run(":8001")
 }
