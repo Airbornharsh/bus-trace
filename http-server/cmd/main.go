@@ -11,7 +11,7 @@ import (
 )
 
 func main() {
-	gin.SetMode(gin.ReleaseMode)
+	gin.SetMode(gin.DebugMode)
 	r := gin.New()
 
 	err := godotenv.Load(".env")
