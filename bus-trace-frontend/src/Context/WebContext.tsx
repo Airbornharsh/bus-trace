@@ -44,7 +44,7 @@ interface WebSocketProviderProps {
   children: ReactNode
 }
 
-const WebSocketUrl = `ws://${import.meta.env.VITE_APP_WEBSOCKET_SERVER_LINK}/ws`
+const WebSocketUrl = `wss://${import.meta.env.VITE_APP_WEBSOCKET_SERVER_LINK}/ws`
 // const WebSocketUrl = 'wss://bus-trace-websocket-server.onrender.com/ws'
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
@@ -68,9 +68,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     if (socket) {
       socket.close()
     }
+    console.log(`${WebSocketUrl}/bus/${session?.access_token}`)
     const newSocket = new WebSocket(
       `${WebSocketUrl}/bus/${session?.access_token}`
     )
+    console.log(`2${WebSocketUrl}/bus/${session?.access_token}`)
 
     newSocket.addEventListener('open', (event) => {
       setConnected(true)
