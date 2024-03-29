@@ -14,11 +14,11 @@ func RouteInit(r *gin.Engine) {
 		)
 	})
 
-	busRoutes := r.Group("bus")
-	userRoutes := r.Group("user")
+	busRoutes := r.Group("/bus")
+	userRoutes := r.Group("/user")
 
-	userRoutes.POST("", handlers.CreateUser)
-	userRoutes.GET("", handlers.GetUser)
-	busRoutes.POST("", handlers.BusCreate)
-	busRoutes.GET("", handlers.SearchBus)
+	userRoutes.POST("/", handlers.CreateUser)
+	userRoutes.GET("/", handlers.GetUser)
+	busRoutes.POST("/", handlers.BusCreate)
+	busRoutes.GET("/", handlers.SearchBus)
 }

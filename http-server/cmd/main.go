@@ -11,22 +11,19 @@ import (
 )
 
 func main() {
-	gin.SetMode(gin.DebugMode)
-	r := gin.New()
-
 	err := godotenv.Load(".env")
 	if err != nil {
 		fmt.Println(err)
 		fmt.Println("Error in Loading Env File")
 	}
 
-	r.Use(CorsMiddleware())
-
 	db.DbInit()
 
-	r.HEAD("/", func(c *gin.Context) {
-		c.Status(http.StatusOK)
-	})
+	gin.SetMode(gin.ReleaseMode)
+
+	r := gin.New()
+
+	r.Use(CorsMiddleware())
 
 	r.POST("/", func(c *gin.Context) {
 		fmt.Println(c)
@@ -38,9 +35,8 @@ func main() {
 
 	routes.RouteInit(r)
 
-	fmt.Println("Routes")
-
-	r.Run("0.0.0.0:8001")
+	fmt.Println("Server Started at http://localhost:8001")
+	r.Run(":8001")
 }
 
 func CorsMiddleware() gin.HandlerFunc {

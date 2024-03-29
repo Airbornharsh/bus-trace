@@ -1,4 +1,4 @@
-FROM golang:1.22.1-alpine3.18
+FROM golang:1.21.3-alpine3.18
 
 WORKDIR /app
 
@@ -8,10 +8,10 @@ RUN go mod download && go mod verify
 
 COPY . ./
 
-WORKDIR /app/cmd
+WORKDIR /app/cmd/http-server
 
-RUN go build -o bus-trace-http-server-go
+RUN go build -o http-server
 
 EXPOSE 8001
 
-CMD ["./bus-trace-http-server-go"]
+CMD ["./http-server"] 
