@@ -17,8 +17,14 @@ const Bus = () => {
   const [zoom, setZoom] = useState(16)
   const [load, setLoad] = useState(false)
   const { session } = useAuth()
-  const { customAlert, userLocations, userList, connected, setBusSocket } =
-    useWebSocket()
+  const {
+    customAlert,
+    userLocations,
+    userList,
+    connected,
+    setBusSocket,
+    busClose
+  } = useWebSocket()
 
   const params = useParams()
 
@@ -79,6 +85,17 @@ const Bus = () => {
   return (
     <div className="flex flex-col justify-center items-center">
       <h2>Admin</h2>
+      {connected && (
+        <button
+          className="px-2 h-8 bg-gray-500 text-white"
+          onClick={(e) => {
+            e.preventDefault()
+            busClose()
+          }}
+        >
+          Close
+        </button>
+      )}
       <p>{connected ? 'Connected' : 'Disconnected'}</p>
       <p>{customAlert}</p>
       <ul>

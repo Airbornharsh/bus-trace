@@ -23,6 +23,7 @@ interface WebSocketContextProps {
   setBusSocket: () => void
   setUserSocket: (busId: string) => void
   sendMessage: (message: Position) => void
+  busClose: () => void
 }
 
 const WebSocketContext = createContext<WebSocketContextProps | undefined>(
@@ -227,6 +228,19 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       socket.send(JSON.stringify(message))
     }
   }
+  const busClose = () => {
+    console.log('Bus Close')
+    if (socket) {
+      socket.send(
+        JSON.stringify({
+          busClose: {
+            close: true
+          },
+          which: 'busClose'
+        })
+      )
+    }
+  }
 
   const contextValue: WebSocketContextProps = {
     connected,
@@ -237,7 +251,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     userList,
     customAlert,
     sendMessage,
-    setUserSocket: setUserSocketFn
+    setUserSocket: setUserSocketFn,
+    busClose
   }
 
   return (

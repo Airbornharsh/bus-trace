@@ -135,8 +135,13 @@ func BusSocket(c *gin.Context) {
 					}
 				} else if data.Which == "busClose" {
 					if data.BusClose.Close {
+						conn.Close()
 						close(stopReadCh)
 						close(stopUploadCh)
+						delete(websocket.BusOwner, busId)
+						helpers.RemoveBusConns(busId)
+						delete(websocket.BusClients, busId)
+						return
 					}
 				}
 			}
