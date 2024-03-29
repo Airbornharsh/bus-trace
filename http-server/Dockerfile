@@ -1,4 +1,4 @@
-FROM golang:1.21.3-alpine3.18
+FROM golang:1.22.1-alpine3.18
 
 WORKDIR /app
 
@@ -8,7 +8,7 @@ RUN go mod download && go mod verify
 
 COPY . ./
 
-WORKDIR /app/cmd/http-server
+WORKDIR /app/cmd
 
 RUN go build -o http-server
 
