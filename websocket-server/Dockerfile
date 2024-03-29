@@ -10,8 +10,8 @@ COPY . ./
 
 WORKDIR /app/cmd
 
-RUN go build -o bus-trace-websocket-server-go
+RUN go build -o websocket-server
 
 EXPOSE 8000
 
-CMD ["./bus-trace-websocket-server-go"]
+CMD ["./websocket-server"] 6

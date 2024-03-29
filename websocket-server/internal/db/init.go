@@ -14,14 +14,14 @@ var DB *gorm.DB
 func DBInit() {
 	host := os.Getenv("HOST")
 	db_name := os.Getenv("DB_NAME")
-	port := os.Getenv("PORT")
+	port := os.Getenv("DB_PORT")
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("PASSWORD")
 
 	dsn := "host=" + host + " user=" + user + " password=" + password + " dbname=" + db_name + " port=" + port
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic(err.Error())
+		fmt.Println(err.Error())
 	} else {
 		DB = db
 		fmt.Println("Connected")

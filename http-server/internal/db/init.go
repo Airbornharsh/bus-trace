@@ -14,7 +14,7 @@ var DB *gorm.DB
 func DbInit() {
 	host := os.Getenv("HOST")
 	db_name := os.Getenv("DB_NAME")
-	port := os.Getenv("PORT")
+	port := os.Getenv("DB_PORT")
 	user := os.Getenv("DB_USER")
 	password := os.Getenv("PASSWORD")
 
