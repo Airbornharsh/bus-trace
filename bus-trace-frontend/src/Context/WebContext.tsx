@@ -64,19 +64,14 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const [userList, setUserList] = useState<string[]>([])
 
   const setBusSocketFn = () => {
-    console.log('socket Connection')
     if (socket) {
       socket.close()
     }
-    console.log(`${WebSocketUrl}/bus/${session?.access_token}`)
     const newSocket = new WebSocket(
       `${WebSocketUrl}/bus/${session?.access_token}`
     )
-    console.log(`2${WebSocketUrl}/bus/${session?.access_token}`)
-
-    newSocket.addEventListener('open', (event) => {
+    newSocket.addEventListener('open', () => {
       setConnected(true)
-      console.log('WebSocket connection opened:', event)
       const data = 0
       setInterval(() => {
         if (navigator.geolocation) {
@@ -102,18 +97,15 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       }, 5000)
     })
 
-    newSocket.addEventListener('close', (event) => {
+    newSocket.addEventListener('close', () => {
       setConnected(false)
-      console.log('WebSocket connection closed:', event)
     })
 
-    newSocket.addEventListener('error', (event) => {
+    newSocket.addEventListener('error', () => {
       setConnected(false)
-      console.error('WebSocket connection error:', event)
     })
 
     newSocket.addEventListener('message', (event) => {
-      console.log('WebSocket message:', event)
       if (validate(event.data)) {
         if (
           event.data.includes('lat') &&
@@ -144,7 +136,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   }
 
   const setUserSocketFn = (busId: string) => {
-    console.log('socket Connection')
     if (socket) {
       socket.close()
     }
@@ -153,9 +144,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       `${WebSocketUrl}/user/${busId}/${session?.access_token}`
     )
 
-    newSocket.addEventListener('open', (event) => {
+    newSocket.addEventListener('open', () => {
       setConnected(true)
-      console.log('WebSocket connection opened:', event)
       if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(
           (position) => {
@@ -198,18 +188,15 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
       // }, 5000)
     })
 
-    newSocket.addEventListener('close', (event) => {
+    newSocket.addEventListener('close', () => {
       setConnected(false)
-      console.log('WebSocket connection closed:', event)
     })
 
-    newSocket.addEventListener('error', (event) => {
+    newSocket.addEventListener('error', () => {
       setConnected(false)
-      console.error('WebSocket connection error:', event)
     })
 
     newSocket.addEventListener('message', (event) => {
-      console.log('WebSocket message:', event.data)
       if (event.data.includes('lat') && event.data.includes('long')) {
         const data = JSON.parse(event.data)
         setLocation({

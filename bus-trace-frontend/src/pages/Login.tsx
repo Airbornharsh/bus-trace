@@ -11,7 +11,6 @@ const SignUp = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    console.log('Form Data:', formData)
     try {
       const res = await supabase.auth.signInWithPassword({
         email: formData.email,

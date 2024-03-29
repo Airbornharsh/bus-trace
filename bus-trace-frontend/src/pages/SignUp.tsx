@@ -12,8 +12,6 @@ const SignUp = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    console.log('Send OTP')
-
     const { data, error } = await supabase.auth.signUp({
       email: formData.email,
       password: formData.password,
