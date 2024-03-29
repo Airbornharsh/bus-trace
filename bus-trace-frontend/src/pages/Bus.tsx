@@ -85,15 +85,23 @@ const Bus = () => {
   return (
     <div className="flex flex-col justify-center items-center">
       <h2>Admin</h2>
-      {connected && (
+      {connected ? (
         <button
           className="px-2 h-8 bg-gray-500 text-white"
-          onClick={(e) => {
-            e.preventDefault()
+          onClick={() => {
             busClose()
           }}
         >
           Close
+        </button>
+      ) : (
+        <button
+          className="px-2 h-8 bg-gray-500 text-white"
+          onClick={() => {
+            setBusSocket()
+          }}
+        >
+          Reconnect
         </button>
       )}
       <p>{connected ? 'Connected' : 'Disconnected'}</p>

@@ -2,13 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	"time"
 
-	"github.com/airbornharsh/bus-trace/websocket-server/internal/db"
 	"github.com/airbornharsh/bus-trace/websocket-server/internal/websocket"
 	"github.com/airbornharsh/bus-trace/websocket-server/pkg/Types"
 	"github.com/airbornharsh/bus-trace/websocket-server/pkg/helpers"
-	"github.com/airbornharsh/bus-trace/websocket-server/pkg/models"
 	"github.com/gin-gonic/gin"
 )
 
@@ -41,26 +38,7 @@ func BusSocket(c *gin.Context) {
 		// delete(websocket.Clients, userId)
 		// return
 	} else {
-		go func(stopCh <-chan struct{}) {
-			defer fmt.Println("Goroutine exited.")
-			for {
-				select {
-				case <-stopCh:
-					fmt.Println("Stop signal received. Exiting goroutine.")
-					return
-				case <-time.After(60 * time.Second):
-					loc, ok := websocket.BusLocation[busId]
-					if ok {
-						if result := db.DB.Model(&models.Bus{}).Where("id = ?", "d6e10f57-50ea-434a-a2ed-ad6a7a7205c1").Updates(map[string]interface{}{
-							"lat":  loc.Lat,
-							"long": loc.Long,
-						}); result.Error != nil {
-							fmt.Println("Update Bus Failed")
-						}
-					}
-				}
-			}
-		}(stopUploadCh)
+		go helpers.UpdateBusLocationDB(busId, stopUploadCh)
 		defer delete(websocket.BusOwner, busId)
 		defer helpers.RemoveBusConns(busId)
 		defer delete(websocket.BusClients, busId)
@@ -104,45 +82,9 @@ func BusSocket(c *gin.Context) {
 					break
 				}
 				if data.Which == "busData" {
-					data.BusData.BusId = busId
-					websocket.BusLocation[busId] = types.Location{
-						Lat:  data.BusData.Lat,
-						Long: data.BusData.Long,
-					}
-					for i, client := range websocket.BusClients[busId] {
-						data.BusData.Index = i + 1
-						if !websocket.Clients[client] {
-							continue
-						}
-						clientLoc := websocket.ClientLocation[client]
-						websocket.ClientLocation[userId] = types.Location{
-							Lat:  data.BusData.Lat,
-							Long: data.BusData.Long,
-						}
-						if helpers.IsInside(data.BusData.Lat, data.BusData.Long, clientLoc.Lat, clientLoc.Long) {
-							// if client != userId {
-							// 	conn.WriteJSON(UserData{
-							// 		UserId: userId,
-							// 		Lat:    clientLoc.Lat,
-							// 		Long:   clientLoc.Long,
-							// 	})
-							// }
-							con, has := websocket.UserClient[client]
-							if has {
-								con.WriteJSON(data.BusData)
-							}
-						}
-					}
+					helpers.BusDataRes(userId, busId, data)
 				} else if data.Which == "busClose" {
-					if data.BusClose.Close {
-						conn.Close()
-						close(stopReadCh)
-						close(stopUploadCh)
-						delete(websocket.BusOwner, busId)
-						helpers.RemoveBusConns(busId)
-						delete(websocket.BusClients, busId)
-						return
-					}
+					helpers.BusCloseRes(busId, conn, data, stopReadCh, stopUploadCh)
 				}
 			}
 		}
