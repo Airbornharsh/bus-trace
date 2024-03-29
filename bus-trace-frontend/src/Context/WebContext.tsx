@@ -44,7 +44,10 @@ interface WebSocketProviderProps {
   children: ReactNode
 }
 
-const WebSocketUrl = import.meta.env.MODE === 'development' ? 'ws://localhost:8000/ws' : `wss://${import.meta.env.VITE_APP_WEBSOCKET_SERVER_LINK}/ws`
+const WebSocketUrl =
+  import.meta.env.MODE === 'development'
+    ? 'ws://localhost:8000/ws'
+    : `wss://${import.meta.env.VITE_APP_WEBSOCKET_SERVER_LINK}/ws`
 // const WebSocketUrl = 'wss://bus-trace-websocket-server.onrender.com/ws'
 
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
@@ -79,9 +82,12 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             (position) => {
               newSocket.send(
                 JSON.stringify({
-                  busId: '1',
-                  lat: position.coords.latitude + data,
-                  long: position.coords.longitude + data
+                  busData: {
+                    busId: '1',
+                    lat: position.coords.latitude + data,
+                    long: position.coords.longitude + data
+                  },
+                  which: 'busData'
                 })
               )
             },

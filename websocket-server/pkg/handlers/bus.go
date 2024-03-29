@@ -94,7 +94,7 @@ func BusSocket(c *gin.Context) {
 				fmt.Println("Stop signal received. Exiting goroutine.")
 				return
 			default:
-				var data types.BusData
+				var data types.BusResponse
 				if !websocket.Clients[userId] {
 					break
 				}
@@ -103,33 +103,40 @@ func BusSocket(c *gin.Context) {
 					fmt.Println("Error in Reading Json", err.Error())
 					break
 				}
-				data.BusId = busId
-				websocket.BusLocation[busId] = types.Location{
-					Lat:  data.Lat,
-					Long: data.Long,
-				}
-				for i, client := range websocket.BusClients[busId] {
-					data.Index = i + 1
-					if !websocket.Clients[client] {
-						continue
+				if data.Which == "busData" {
+					data.BusData.BusId = busId
+					websocket.BusLocation[busId] = types.Location{
+						Lat:  data.BusData.Lat,
+						Long: data.BusData.Long,
 					}
-					clientLoc := websocket.ClientLocation[client]
-					websocket.ClientLocation[userId] = types.Location{
-						Lat:  data.Lat,
-						Long: data.Long,
-					}
-					if helpers.IsInside(data.Lat, data.Long, clientLoc.Lat, clientLoc.Long) {
-						// if client != userId {
-						// 	conn.WriteJSON(UserData{
-						// 		UserId: userId,
-						// 		Lat:    clientLoc.Lat,
-						// 		Long:   clientLoc.Long,
-						// 	})
-						// }
-						con, has := websocket.UserClient[client]
-						if has {
-							con.WriteJSON(data)
+					for i, client := range websocket.BusClients[busId] {
+						data.BusData.Index = i + 1
+						if !websocket.Clients[client] {
+							continue
 						}
+						clientLoc := websocket.ClientLocation[client]
+						websocket.ClientLocation[userId] = types.Location{
+							Lat:  data.BusData.Lat,
+							Long: data.BusData.Long,
+						}
+						if helpers.IsInside(data.BusData.Lat, data.BusData.Long, clientLoc.Lat, clientLoc.Long) {
+							// if client != userId {
+							// 	conn.WriteJSON(UserData{
+							// 		UserId: userId,
+							// 		Lat:    clientLoc.Lat,
+							// 		Long:   clientLoc.Long,
+							// 	})
+							// }
+							con, has := websocket.UserClient[client]
+							if has {
+								con.WriteJSON(data.BusData)
+							}
+						}
+					}
+				} else if data.Which == "busClose" {
+					if data.BusClose.Close {
+						close(stopReadCh)
+						close(stopUploadCh)
 					}
 				}
 			}
