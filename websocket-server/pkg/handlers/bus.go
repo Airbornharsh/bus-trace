@@ -32,6 +32,8 @@ func BusSocket(c *gin.Context) {
 	websocket.UserClient[userId] = conn
 	websocket.Clients[userId] = true
 	_, has := websocket.BusOwner[busId]
+	stopUploadCh := make(chan struct{})
+	stopReadCh := make(chan struct{})
 	if has {
 		fmt.Println("Already There")
 		conn.WriteMessage(1, []byte("Status: Bus Already Added"))
@@ -39,6 +41,26 @@ func BusSocket(c *gin.Context) {
 		// delete(websocket.Clients, userId)
 		// return
 	} else {
+		go func(stopCh <-chan struct{}) {
+			defer fmt.Println("Goroutine exited.")
+			for {
+				select {
+				case <-stopCh:
+					fmt.Println("Stop signal received. Exiting goroutine.")
+					return
+				case <-time.After(60 * time.Second):
+					loc, ok := websocket.BusLocation[busId]
+					if ok {
+						if result := db.DB.Model(&models.Bus{}).Where("id = ?", "d6e10f57-50ea-434a-a2ed-ad6a7a7205c1").Updates(map[string]interface{}{
+							"lat":  loc.Lat,
+							"long": loc.Long,
+						}); result.Error != nil {
+							fmt.Println("Update Bus Failed")
+						}
+					}
+				}
+			}
+		}(stopUploadCh)
 		defer delete(websocket.BusOwner, busId)
 		defer helpers.RemoveBusConns(busId)
 		defer delete(websocket.BusClients, busId)
@@ -64,63 +86,55 @@ func BusSocket(c *gin.Context) {
 	}
 	conn.WriteMessage(1, []byte("Status: Bus Added"))
 
-	go func() {
+	go func(stopCh <-chan struct{}) {
+		defer fmt.Println("Goroutine exited.")
 		for {
-			time.Sleep(60 * time.Second)
-			loc, ok := websocket.BusLocation[busId]
-			if ok {
-				if result := db.DB.Model(&models.Bus{}).Where("id = ?", "d6e10f57-50ea-434a-a2ed-ad6a7a7205c1").Updates(map[string]interface{}{
-					"lat":  loc.Lat,
-					"long": loc.Long,
-				}); result.Error != nil {
-					fmt.Println("Update Bus Failed")
+			select {
+			case <-stopCh:
+				fmt.Println("Stop signal received. Exiting goroutine.")
+				return
+			default:
+				var data types.BusData
+				if !websocket.Clients[userId] {
+					break
 				}
-			}
-		}
-	}()
-
-	go func() {
-		for {
-			var data types.BusData
-			if !websocket.Clients[userId] {
-				break
-			}
-			err = conn.ReadJSON(&data)
-			if err != nil {
-				fmt.Println("Error in Reading Json", err.Error())
-				break
-			}
-			data.BusId = busId
-			websocket.BusLocation[busId] = types.Location{
-				Lat:  data.Lat,
-				Long: data.Long,
-			}
-			for i, client := range websocket.BusClients[busId] {
-				data.Index = i + 1
-				if !websocket.Clients[client] {
-					continue
+				err = conn.ReadJSON(&data)
+				if err != nil {
+					fmt.Println("Error in Reading Json", err.Error())
+					break
 				}
-				clientLoc := websocket.ClientLocation[client]
-				websocket.ClientLocation[userId] = types.Location{
+				data.BusId = busId
+				websocket.BusLocation[busId] = types.Location{
 					Lat:  data.Lat,
 					Long: data.Long,
 				}
-				if helpers.IsInside(data.Lat, data.Long, clientLoc.Lat, clientLoc.Long) {
-					// if client != userId {
-					// 	conn.WriteJSON(UserData{
-					// 		UserId: userId,
-					// 		Lat:    clientLoc.Lat,
-					// 		Long:   clientLoc.Long,
-					// 	})
-					// }
-					con, has := websocket.UserClient[client]
-					if has {
-						con.WriteJSON(data)
+				for i, client := range websocket.BusClients[busId] {
+					data.Index = i + 1
+					if !websocket.Clients[client] {
+						continue
+					}
+					clientLoc := websocket.ClientLocation[client]
+					websocket.ClientLocation[userId] = types.Location{
+						Lat:  data.Lat,
+						Long: data.Long,
+					}
+					if helpers.IsInside(data.Lat, data.Long, clientLoc.Lat, clientLoc.Long) {
+						// if client != userId {
+						// 	conn.WriteJSON(UserData{
+						// 		UserId: userId,
+						// 		Lat:    clientLoc.Lat,
+						// 		Long:   clientLoc.Long,
+						// 	})
+						// }
+						con, has := websocket.UserClient[client]
+						if has {
+							con.WriteJSON(data)
+						}
 					}
 				}
 			}
 		}
-	}()
+	}(stopReadCh)
 
 	select {}
 }
