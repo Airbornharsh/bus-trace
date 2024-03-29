@@ -35,8 +35,8 @@ func main() {
 
 	// routes.RouteInit(r)
 
-	fmt.Println("Server Started at http://localhost:8001")
-	r.Run(":8001")
+	fmt.Println("Server Started at http://localhost:8080")
+	r.Run(":8080")
 }
 
 // func CorsMiddleware() gin.HandlerFunc {
