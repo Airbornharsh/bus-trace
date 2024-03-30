@@ -12,8 +12,7 @@ import (
 	ws "github.com/gorilla/websocket"
 )
 
-func BusDataRes(userId string, busId string, data types.BusResponse) {
-	data.BusData.BusId = busId
+func BusDataRes(userId string, busId string, data types.BusRequest) {
 	websocket.BusLocation[busId] = types.Location{
 		Lat:  data.BusData.Lat,
 		Long: data.BusData.Long,
@@ -30,21 +29,33 @@ func BusDataRes(userId string, busId string, data types.BusResponse) {
 		}
 		if IsInside(data.BusData.Lat, data.BusData.Long, clientLoc.Lat, clientLoc.Long) {
 			// if client != userId {
-			// 	conn.WriteJSON(UserData{
-			// 		UserId: userId,
-			// 		Lat:    clientLoc.Lat,
-			// 		Long:   clientLoc.Long,
+			// 	conn.WriteJSON(types.BusResponse{
+			// 		BusId: busId,
+			// 		BusUserLocation: types.BusUserLocation{
+			// 			UserId: userId,
+			// 			Lat:    clientLoc.Lat,
+			// 			Long:   clientLoc.Long,
+			// 		},
+			// 		Which: "busUserLocation",
 			// 	})
 			// }
 			con, has := websocket.UserClient[client]
 			if has {
-				con.WriteJSON(data.BusData)
+				con.WriteJSON(types.UserResponse{
+					UserId: userId,
+					UserBusData: types.UserBusData{
+						BusId: busId,
+						Lat:   data.BusData.Lat,
+						Long:  data.BusData.Long,
+					},
+					Which: "userBusData",
+				})
 			}
 		}
 	}
 }
 
-func BusCloseRes(busId string, conn *ws.Conn, data types.BusResponse, stopReadCh chan struct{}, stopUploadCh chan struct{}) {
+func BusCloseRes(busId string, conn *ws.Conn, data types.BusRequest, stopReadCh chan struct{}, stopUploadCh chan struct{}) {
 	if data.BusClose.Close {
 		conn.Close()
 		select {
@@ -72,13 +83,19 @@ func RemoveBusConns(busId string) {
 		if !has {
 			fmt.Println("Error in getting the bus Conn")
 		}
-		client.WriteMessage(1, []byte("Status: Bus Disconnected"))
-		client.Close()
+		delete(websocket.Clients, userId)
 		_, locationHas := websocket.ClientLocation[userId]
 		if locationHas {
 			delete(websocket.ClientLocation, userId)
 		}
-		delete(websocket.Clients, userId)
+		// client.WriteMessage(1, []byte("Status: Bus Disconnected"))
+		client.WriteJSON(types.UserResponse{
+			UserMessage: types.UserMessage{
+				Message: "Bus Disconnected",
+			},
+			Which: "userMessage",
+		})
+		client.Close()
 	}
 }
 

@@ -32,15 +32,28 @@ func UserSocket(c *gin.Context) {
 	busUserId, has := websocket.BusOwner[busId]
 	if !has {
 		defer conn.Close()
-		conn.WriteMessage(1, []byte("Status: Bus is not Connected"))
+		// conn.WriteMessage(1, []byte("Status: Bus is not Connected"))
+		conn.WriteJSON(types.UserResponse{
+			UserId: userId,
+			UserMessage: types.UserMessage{
+				Message: "Bus is not Connected",
+			},
+			Which: "userMessage",
+		})
 		return
 	} else {
 		busConn, has := websocket.UserClient[busUserId]
 		if !has {
 			fmt.Println("Error in getting the bus Conn")
 		}
-		busConn.WriteMessage(1, []byte("Status: User is Tracking"))
-
+		// busConn.WriteMessage(1, []byte("Status: User is Tracking"))
+		busConn.WriteJSON(types.BusResponse{
+			BusId: busId,
+			BusMessage: types.BusMessage{
+				Message: "User is Tracking",
+			},
+			Which: "busMessage",
+		})
 		websocket.UserClient[userId] = conn
 		websocket.Clients[userId] = true
 		websocket.BusClients[busId] = append(websocket.BusClients[busId], userId)
@@ -52,19 +65,33 @@ func UserSocket(c *gin.Context) {
 		if !busLocationHas {
 			fmt.Println("No Bus Location Found")
 		}
-		conn.WriteJSON(types.BusData{
-			BusId: busId,
-			Lat:   busLocation.Lat,
-			Long:  busLocation.Long,
-			Index: 1,
+		conn.WriteJSON(types.UserResponse{
+			UserBusData: types.UserBusData{
+				BusId: busId,
+				Lat:   busLocation.Lat,
+				Long:  busLocation.Long,
+			},
+			Which: "userBusData",
 		})
-		conn.WriteMessage(1, []byte("Status: Connected to Bus"))
-		busConn.WriteJSON(websocket.BusClients[busId])
+		// conn.WriteMessage(1, []byte("Status: Connected to Bus"))
+		conn.WriteJSON(types.UserResponse{
+			UserId: userId,
+			UserMessage: types.UserMessage{
+				Message: "Connected to Bus",
+			},
+			Which: "userMessage",
+		})
+		busConn.WriteJSON(types.BusResponse{
+			BusUserList: websocket.BusClients[busId],
+			Which:       "busUserList",
+		})
 
 		for {
-			var loc types.Location
-			err := conn.ReadJSON(&loc)
-			fmt.Println(loc)
+			var data types.UserRequest
+			if !websocket.Clients[userId] {
+				break
+			}
+			err := conn.ReadJSON(&data)
 			busConn, has := websocket.UserClient[busUserId]
 			if !has {
 				fmt.Println("Error in getting the bus Conn")
@@ -80,19 +107,31 @@ func UserSocket(c *gin.Context) {
 				}
 				tempSlice := append(websocket.BusClients[busId][:toRemove], websocket.BusClients[busId][toRemove+1:]...)
 				websocket.BusClients[busId] = tempSlice
-				busConn.WriteMessage(1, []byte("Status: User Disconnected"))
-				busConn.WriteJSON(tempSlice)
+				// busConn.WriteMessage(1, []byte("Status: User Disconnected"))
+				busConn.WriteJSON(types.BusResponse{
+					BusUserList: tempSlice,
+					BusMessage: types.BusMessage{
+						Message: "User Disconnected",
+					},
+					Which: "busUserList&busMessage",
+				})
 				break
 			}
-			websocket.ClientLocation[userId] = types.Location{
-				Lat:  loc.Lat,
-				Long: loc.Long,
+			if data.Which == "userLocation" {
+				websocket.ClientLocation[userId] = types.Location{
+					Lat:  data.UserLocation.Lat,
+					Long: data.UserLocation.Long,
+				}
+				busConn.WriteJSON(types.BusResponse{
+					BusId: busId,
+					BusUserLocation: types.BusUserLocation{
+						UserId: userId,
+						Lat:    data.UserLocation.Lat,
+						Long:   data.UserLocation.Long,
+					},
+					Which: "busUserLocation",
+				})
 			}
-			busConn.WriteJSON(types.UserData{
-				UserId: userId,
-				Lat:    loc.Lat,
-				Long:   loc.Long,
-			})
 		}
 	}
 }

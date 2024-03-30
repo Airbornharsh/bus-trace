@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react'
 import { validate } from '../helpers/Json'
 import { useAuth } from './AuthContext'
+import { BusRes } from '../types/bus'
+import { UserRes } from '../types/user'
 
 interface Position {
   busId: string
@@ -114,29 +116,51 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
     newSocket.addEventListener('message', (event) => {
       if (validate(event.data)) {
-        if (
-          event.data.includes('lat') &&
-          event.data.includes('long') &&
-          event.data.includes('userId')
-        ) {
-          const data = JSON.parse(event.data)
+        // if (
+        //   event.data.includes('lat') &&
+        //   event.data.includes('long') &&
+        //   event.data.includes('userId')
+        // ) {
+        //   const data = JSON.parse(event.data)
+        //   setUserLocations((prev) => ({
+        //     ...prev,
+        //     [data.userId]: {
+        //       lat: data.lat,
+        //       long: data.long
+        //     }
+        //   }))
+        // } else {
+        //   const data = JSON.parse(event.data)
+        //   setUserList(data || [])
+        // }
+
+        const parsedData = JSON.parse(event.data) as BusRes
+        const whichVals = parsedData.which.split('&')
+        if (whichVals.includes('busData')) {
           setUserLocations((prev) => ({
             ...prev,
-            [data.userId]: {
-              lat: data.lat,
-              long: data.long
+            [parsedData.busId]: {
+              lat: parsedData.busData.lat,
+              long: parsedData.busData.long
             }
           }))
-        } else {
-          const data = JSON.parse(event.data)
-          setUserList(data || [])
         }
-      } else if (event.data.split(' ')[0] === 'Status:') {
-        setCustomAlert(event.data)
-        setTimeout(() => {
-          setCustomAlert('')
-        }, 5000)
+        if (whichVals.includes('userList')) {
+          setUserList(parsedData.userList)
+        }
+        if (whichVals.includes('busMessage')) {
+          setCustomAlert(parsedData.busMessage.message)
+          setTimeout(() => {
+            setCustomAlert('')
+          }, 5000)
+        }
       }
+      // else if (event.data.split(' ')[0] === 'Status:') {
+      //   setCustomAlert(event.data)
+      //   setTimeout(() => {
+      //     setCustomAlert('')
+      //   }, 5000)
+      // }
     })
 
     setSocket(newSocket)
@@ -158,8 +182,11 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
           (position) => {
             newSocket.send(
               JSON.stringify({
-                lat: position.coords.latitude,
-                long: position.coords.longitude
+                userLocation: {
+                  lat: position.coords.latitude,
+                  long: position.coords.longitude
+                },
+                which: 'userLocation'
               })
             )
           },
@@ -204,14 +231,28 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     })
 
     newSocket.addEventListener('message', (event) => {
-      if (event.data.includes('lat') && event.data.includes('long')) {
-        const data = JSON.parse(event.data)
+      // if (event.data.includes('lat') && event.data.includes('long')) {
+      //   const data = JSON.parse(event.data)
+      //   setLocation({
+      //     lat: data.lat,
+      //     long: data.long
+      //   })
+      // } else if (event.data.split(' ')[0] === 'Status:') {
+      //   setCustomAlert(event.data)
+      //   setTimeout(() => {
+      //     setCustomAlert('')
+      //   }, 5000)
+      // }
+      const parsedData = JSON.parse(event.data) as UserRes
+      const whichVals = parsedData.which.split('&')
+      if (whichVals.includes('userBusData')) {
         setLocation({
-          lat: data.lat,
-          long: data.long
+          lat: parsedData.userBusData.lat,
+          long: parsedData.userBusData.long
         })
-      } else if (event.data.split(' ')[0] === 'Status:') {
-        setCustomAlert(event.data)
+      }
+      if (whichVals.includes('userMessage')) {
+        setCustomAlert(parsedData.userMessage.message)
         setTimeout(() => {
           setCustomAlert('')
         }, 5000)
@@ -229,7 +270,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     }
   }
   const busClose = () => {
-    console.log('Bus Close')
     if (socket) {
       socket.send(
         JSON.stringify({

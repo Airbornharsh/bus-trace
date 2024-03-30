@@ -33,10 +33,17 @@ func BusSocket(c *gin.Context) {
 	stopReadCh := make(chan struct{})
 	if has {
 		fmt.Println("Already There")
-		conn.WriteMessage(1, []byte("Status: Bus Already Added"))
+		// conn.WriteMessage(1, []byte("Status: Bus Already Added"))
 		// conn.Close()
 		// delete(websocket.Clients, userId)
 		// return
+		conn.WriteJSON(types.BusResponse{
+			BusId: busId,
+			BusMessage: types.BusMessage{
+				Message: "Bus Already Added",
+			},
+			Which: "busMessage",
+		})
 	} else {
 		go helpers.UpdateBusLocationDB(busId, stopUploadCh)
 		defer delete(websocket.BusOwner, busId)
@@ -62,24 +69,34 @@ func BusSocket(c *gin.Context) {
 		Lat:  0,
 		Long: 0,
 	}
-	conn.WriteMessage(1, []byte("Status: Bus Added"))
+	// conn.WriteMessage(1, []byte("Status: Bus Added"))
+	conn.WriteJSON(types.BusResponse{
+		BusId: busId,
+		BusMessage: types.BusMessage{
+			Message: "Bus Added",
+		},
+		Which: "busMessage",
+	})
 
 	go func(stopCh <-chan struct{}) {
 		defer fmt.Println("Goroutine exited.")
+	DataRead:
 		for {
 			select {
 			case <-stopCh:
 				fmt.Println("Stop signal received. Exiting goroutine.")
 				return
 			default:
-				var data types.BusResponse
+				var data types.BusRequest
 				if !websocket.Clients[userId] {
 					break
 				}
 				err = conn.ReadJSON(&data)
 				if err != nil {
 					fmt.Println("Error in Reading Json", err.Error())
-					break
+					close(stopReadCh)
+					close(stopUploadCh)
+					break DataRead
 				}
 				if data.Which == "busData" {
 					helpers.BusDataRes(userId, busId, data)
