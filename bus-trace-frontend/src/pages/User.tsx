@@ -63,7 +63,7 @@ const Bus = () => {
 
     map?.getView().on('change:resolution', () => {
       const newZoom = map?.getView().getZoom()
-      setZoom(newZoom || 12)
+      setZoom(newZoom!)
     })
 
     setOldMarker(marker)
