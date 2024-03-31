@@ -6,6 +6,7 @@ import (
 	"github.com/airbornharsh/bus-trace/websocket-server/internal/websocket"
 	"github.com/airbornharsh/bus-trace/websocket-server/pkg/Types"
 	"github.com/airbornharsh/bus-trace/websocket-server/pkg/helpers"
+	"github.com/airbornharsh/bus-trace/websocket-server/pkg/helpers/mutex"
 	"github.com/gin-gonic/gin"
 )
 
@@ -26,8 +27,22 @@ func BusSocket(c *gin.Context) {
 	if err != nil {
 		fmt.Println(err.Error())
 	}
-	websocket.UserClient[userId] = conn
-	websocket.Clients[userId] = true
+	for {
+		if mutex.BusLocationMutex {
+			mutex.BusLocationMutex = false
+			websocket.UserClient[userId] = conn
+			mutex.BusLocationMutex = true
+			break
+		}
+	}
+	for {
+		if mutex.ClientsMutex {
+			mutex.ClientsMutex = false
+			websocket.Clients[userId] = true
+			mutex.ClientsMutex = true
+			break
+		}
+	}
 	_, has := websocket.BusOwner[busId]
 	stopUploadCh := make(chan struct{})
 	stopReadCh := make(chan struct{})
@@ -46,13 +61,45 @@ func BusSocket(c *gin.Context) {
 		})
 	} else {
 		go helpers.UpdateBusLocationDB(busId, stopUploadCh)
-		defer delete(websocket.BusOwner, busId)
+		defer func() {
+			for {
+				if mutex.BusOwnerMutex {
+					mutex.BusOwnerMutex = false
+					delete(websocket.BusOwner, busId)
+					mutex.BusOwnerMutex = true
+					break
+				}
+			}
+		}()
 		defer helpers.RemoveBusConns(busId)
-		defer delete(websocket.BusClients, busId)
+		defer func() {
+			for {
+				if mutex.BusClientsMutex {
+					mutex.BusClientsMutex = false
+					delete(websocket.BusClients, busId)
+					mutex.BusClientsMutex = true
+					break
+				}
+			}
+		}()
 	}
-	websocket.BusOwner[busId] = userId
+	for {
+		if mutex.BusOwnerMutex {
+			mutex.BusOwnerMutex = false
+			websocket.BusOwner[busId] = userId
+			mutex.BusOwnerMutex = true
+			break
+		}
+	}
 	if clients, ok := websocket.BusClients[busId]; !ok {
-		websocket.BusClients[busId] = []string{userId}
+		for {
+			if mutex.BusClientsMutex {
+				mutex.BusClientsMutex = false
+				websocket.BusClients[busId] = []string{userId}
+				mutex.BusClientsMutex = true
+				break
+			}
+		}
 	} else {
 		var found bool
 		for _, id := range clients {
@@ -62,12 +109,26 @@ func BusSocket(c *gin.Context) {
 			}
 		}
 		if !found {
-			websocket.BusClients[busId] = append(websocket.BusClients[busId], userId)
+			for {
+				if mutex.BusClientsMutex {
+					mutex.BusClientsMutex = false
+					websocket.BusClients[busId] = append(websocket.BusClients[busId], userId)
+					mutex.BusClientsMutex = true
+					break
+				}
+			}
 		}
 	}
-	websocket.BusLocation[busId] = types.Location{
-		Lat:  0,
-		Long: 0,
+	for {
+		if mutex.BusLocationMutex {
+			mutex.BusLocationMutex = false
+			websocket.BusLocation[busId] = types.Location{
+				Lat:  0,
+				Long: 0,
+			}
+			mutex.BusLocationMutex = true
+			break
+		}
 	}
 	// conn.WriteMessage(1, []byte("Status: Bus Added"))
 	conn.WriteJSON(types.BusResponse{

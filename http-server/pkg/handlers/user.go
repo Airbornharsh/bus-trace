@@ -11,13 +11,13 @@ import (
 
 func CreateUser(c *gin.Context) {
 	tx := db.DB.Begin()
-	code, uid, _ := helpers.TokenToUid2(c)
-	if uid == "" {
-		c.JSON(code, gin.H{
-			"message": "Error in Parsing the token",
-		})
-		return
-	}
+	// code, uid, _ := helpers.TokenToUid2(c)
+	// if uid == "" {
+	// 	c.JSON(code, gin.H{
+	// 		"message": "Error in Parsing the token",
+	// 	})
+	// 	return
+	// }
 
 	var user *models.User
 	err := c.ShouldBindJSON(&user)
@@ -25,7 +25,7 @@ func CreateUser(c *gin.Context) {
 		fmt.Println("Unable to marse the Json")
 	}
 
-	user.ID = uid
+	// user.ID = uid
 	result := tx.Model(&models.User{}).Create(&user)
 
 	if result.Error != nil {

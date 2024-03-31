@@ -6,7 +6,9 @@ import (
 	"github.com/airbornharsh/bus-trace/websocket-server/internal/websocket"
 	"github.com/airbornharsh/bus-trace/websocket-server/pkg/Types"
 	"github.com/airbornharsh/bus-trace/websocket-server/pkg/helpers"
+	"github.com/airbornharsh/bus-trace/websocket-server/pkg/helpers/mutex"
 	"github.com/gin-gonic/gin"
+	ws "github.com/gorilla/websocket"
 )
 
 func UserSocket(c *gin.Context) {
@@ -42,7 +44,16 @@ func UserSocket(c *gin.Context) {
 		})
 		return
 	} else {
-		busConn, has := websocket.UserClient[busUserId]
+		var busConn *ws.Conn
+		var has bool
+		for {
+			if mutex.UserClientMutex {
+				mutex.UserClientMutex = false
+				busConn, has = websocket.UserClient[busUserId]
+				mutex.UserClientMutex = true
+				break
+			}
+		}
 		if !has {
 			fmt.Println("Error in getting the bus Conn")
 		}
@@ -54,9 +65,30 @@ func UserSocket(c *gin.Context) {
 			},
 			Which: "busMessage",
 		})
-		websocket.UserClient[userId] = conn
-		websocket.Clients[userId] = true
-		websocket.BusClients[busId] = append(websocket.BusClients[busId], userId)
+		for {
+			if mutex.UserClientMutex {
+				mutex.UserClientMutex = false
+				websocket.UserClient[userId] = conn
+				mutex.UserClientMutex = true
+				break
+			}
+		}
+		for {
+			if mutex.ClientsMutex {
+				mutex.ClientsMutex = false
+				websocket.Clients[userId] = true
+				mutex.ClientsMutex = true
+				break
+			}
+		}
+		for {
+			if mutex.BusClientsMutex {
+				mutex.BusClientsMutex = false
+				websocket.BusClients[busId] = append(websocket.BusClients[busId], userId)
+				mutex.BusClientsMutex = true
+				break
+			}
+		}
 		busUserId, busUserIdHas := websocket.BusOwner[busId]
 		if !busUserIdHas {
 			fmt.Println("Not Found Bus User Id")
@@ -92,21 +124,52 @@ func UserSocket(c *gin.Context) {
 				break
 			}
 			err := conn.ReadJSON(&data)
-			busConn, has := websocket.UserClient[busUserId]
+			var busConn *ws.Conn
+			var has bool
+			for {
+				if mutex.UserClientMutex {
+					mutex.UserClientMutex = false
+					busConn, has = websocket.UserClient[busUserId]
+					mutex.UserClientMutex = true
+					break
+				}
+			}
 			if !has {
 				fmt.Println("Error in getting the bus Conn")
 			}
 			if err != nil {
-				delete(websocket.Clients, userId)
-				delete(websocket.ClientLocation, userId)
-				var toRemove int
-				for i, v := range websocket.BusClients[busId] {
-					if v == userId {
-						toRemove = i
+				for {
+					if mutex.ClientsMutex {
+						mutex.ClientsMutex = false
+						delete(websocket.Clients, userId)
+						mutex.ClientsMutex = true
+						break
 					}
 				}
-				tempSlice := append(websocket.BusClients[busId][:toRemove], websocket.BusClients[busId][toRemove+1:]...)
-				websocket.BusClients[busId] = tempSlice
+				for {
+					if mutex.ClientLocationMutex {
+						mutex.ClientLocationMutex = false
+						delete(websocket.ClientLocation, userId)
+						mutex.ClientLocationMutex = true
+						break
+					}
+				}
+				var tempSlice []string
+				for {
+					if mutex.BusClientsMutex {
+						mutex.BusClientsMutex = false
+						var toRemove int
+						for i, v := range websocket.BusClients[busId] {
+							if v == userId {
+								toRemove = i
+							}
+						}
+						tempSlice = append(websocket.BusClients[busId][:toRemove], websocket.BusClients[busId][toRemove+1:]...)
+						websocket.BusClients[busId] = tempSlice
+						mutex.BusClientsMutex = true
+						break
+					}
+				}
 				// busConn.WriteMessage(1, []byte("Status: User Disconnected"))
 				busConn.WriteJSON(types.BusResponse{
 					BusUserList: tempSlice,
@@ -118,9 +181,16 @@ func UserSocket(c *gin.Context) {
 				break
 			}
 			if data.Which == "userLocation" {
-				websocket.ClientLocation[userId] = types.Location{
-					Lat:  data.UserLocation.Lat,
-					Long: data.UserLocation.Long,
+				for {
+					if mutex.ClientLocationMutex {
+						mutex.ClientLocationMutex = false
+						websocket.ClientLocation[userId] = types.Location{
+							Lat:  data.UserLocation.Lat,
+							Long: data.UserLocation.Long,
+						}
+						mutex.ClientLocationMutex = true
+						break
+					}
 				}
 				busConn.WriteJSON(types.BusResponse{
 					BusId: busId,

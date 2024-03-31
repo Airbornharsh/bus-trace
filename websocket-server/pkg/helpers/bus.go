@@ -8,14 +8,22 @@ import (
 	"github.com/airbornharsh/bus-trace/websocket-server/internal/db"
 	"github.com/airbornharsh/bus-trace/websocket-server/internal/websocket"
 	"github.com/airbornharsh/bus-trace/websocket-server/pkg/Types"
+	"github.com/airbornharsh/bus-trace/websocket-server/pkg/helpers/mutex"
 	"github.com/airbornharsh/bus-trace/websocket-server/pkg/models"
 	ws "github.com/gorilla/websocket"
 )
 
 func BusDataRes(userId string, busId string, data types.BusRequest) {
-	websocket.BusLocation[busId] = types.Location{
-		Lat:  data.BusData.Lat,
-		Long: data.BusData.Long,
+	for {
+		if mutex.BusLocationMutex {
+			mutex.BusLocationMutex = false
+			websocket.BusLocation[busId] = types.Location{
+				Lat:  data.BusData.Lat,
+				Long: data.BusData.Long,
+			}
+			mutex.BusLocationMutex = true
+			break
+		}
 	}
 	for i, client := range websocket.BusClients[busId] {
 		data.BusData.Index = i + 1
@@ -23,9 +31,16 @@ func BusDataRes(userId string, busId string, data types.BusRequest) {
 			continue
 		}
 		clientLoc := websocket.ClientLocation[client]
-		websocket.ClientLocation[userId] = types.Location{
-			Lat:  data.BusData.Lat,
-			Long: data.BusData.Long,
+		for {
+			if mutex.ClientLocationMutex {
+				mutex.ClientLocationMutex = false
+				websocket.ClientLocation[userId] = types.Location{
+					Lat:  data.BusData.Lat,
+					Long: data.BusData.Long,
+				}
+				mutex.ClientLocationMutex = true
+				break
+			}
 		}
 		if IsInside(data.BusData.Lat, data.BusData.Long, clientLoc.Lat, clientLoc.Long) {
 			// if client != userId {
@@ -39,7 +54,16 @@ func BusDataRes(userId string, busId string, data types.BusRequest) {
 			// 		Which: "busUserLocation",
 			// 	})
 			// }
-			con, has := websocket.UserClient[client]
+			var con *ws.Conn
+			var has bool
+			for {
+				if mutex.UserClientMutex {
+					mutex.UserClientMutex = false
+					con, has = websocket.UserClient[client]
+					mutex.UserClientMutex = true
+					break
+				}
+			}
 			if has {
 				con.WriteJSON(types.UserResponse{
 					UserId: userId,
@@ -70,23 +94,60 @@ func BusCloseRes(busId string, conn *ws.Conn, data types.BusRequest, stopReadCh 
 		default:
 			close(stopUploadCh)
 		}
-		delete(websocket.BusOwner, busId)
+		for {
+			if mutex.BusOwnerMutex {
+				mutex.BusOwnerMutex = false
+				delete(websocket.BusOwner, busId)
+				mutex.BusOwnerMutex = true
+				break
+			}
+		}
 		RemoveBusConns(busId)
-		delete(websocket.BusClients, busId)
+		for {
+			if mutex.BusClientsMutex {
+				mutex.BusClientsMutex = false
+				delete(websocket.BusClients, busId)
+				mutex.BusClientsMutex = true
+				break
+			}
+		}
 		return
 	}
 }
 
 func RemoveBusConns(busId string) {
 	for _, userId := range websocket.BusClients[busId] {
-		client, has := websocket.UserClient[userId]
+		var client *ws.Conn
+		var has bool
+		for {
+			if mutex.UserClientMutex {
+				mutex.UserClientMutex = false
+				client, has = websocket.UserClient[userId]
+				mutex.UserClientMutex = true
+				break
+			}
+		}
 		if !has {
 			fmt.Println("Error in getting the bus Conn")
 		}
-		delete(websocket.Clients, userId)
+		for {
+			if mutex.ClientsMutex {
+				mutex.ClientsMutex = false
+				delete(websocket.Clients, userId)
+				mutex.ClientsMutex = true
+				break
+			}
+		}
 		_, locationHas := websocket.ClientLocation[userId]
 		if locationHas {
-			delete(websocket.ClientLocation, userId)
+			for {
+				if mutex.ClientLocationMutex {
+					mutex.ClientLocationMutex = false
+					delete(websocket.ClientLocation, userId)
+					mutex.ClientLocationMutex = true
+					break
+				}
+			}
 		}
 		// client.WriteMessage(1, []byte("Status: Bus Disconnected"))
 		client.WriteJSON(types.UserResponse{
@@ -130,7 +191,16 @@ func UpdateBusLocationDB(busId string, stopCh <-chan struct{}) {
 			fmt.Println("Stop signal received. Exiting goroutine.")
 			return
 		case <-time.After(60 * time.Second):
-			loc, ok := websocket.BusLocation[busId]
+			var loc types.Location
+			var ok bool
+			for {
+				if mutex.BusLocationMutex {
+					mutex.BusLocationMutex = false
+					loc, ok = websocket.BusLocation[busId]
+					mutex.BusLocationMutex = true
+					break
+				}
+			}
 			if ok {
 				if result := db.DB.Model(&models.Bus{}).Where("id = ?", "d6e10f57-50ea-434a-a2ed-ad6a7a7205c1").Updates(map[string]interface{}{
 					"lat":  loc.Lat,

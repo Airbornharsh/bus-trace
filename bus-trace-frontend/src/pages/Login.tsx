@@ -12,12 +12,16 @@ const SignUp = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault()
     try {
-      const res = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password
       })
-
-      console.log('Response:', res)
+      if (error) {
+        console.error('Error:', error.message)
+        alert(error.message)
+        return
+      }
+      console.log('Response:', data)
       Navigate('/')
     } catch (error) {
       console.error('Error:', error)
