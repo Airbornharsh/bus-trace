@@ -6,6 +6,12 @@ import { useAuth } from './AuthContext'
 interface HttpContextProps {
   busList: Bus[]
   loadBusList: (s: string) => Promise<void>
+  signUp: (
+    id: string,
+    name: string,
+    email: string,
+    phone: string
+  ) => Promise<void>
 }
 
 const HttpContext = createContext<HttpContextProps | undefined>(undefined)
@@ -44,9 +50,37 @@ export const HttpProvider: React.FC<HttpProviderProps> = ({ children }) => {
     }
   }
 
+  const signUp = async (
+    id: string,
+    name: string,
+    email: string,
+    phone: string
+  ) => {
+    try {
+      await axios.post(
+        `${httpUrl}/user`,
+        {
+          id,
+          name,
+          email,
+          phone
+        },
+        {
+          headers: {
+            Authorization: 'bearer ' + session?.access_token
+          }
+        }
+      )
+      return
+    } catch (e) {
+      console.log(e)
+    }
+  }
+
   const contextValue: HttpContextProps = {
     busList,
-    loadBusList
+    loadBusList,
+    signUp
   }
   return (
     <HttpContext.Provider value={contextValue}>{children}</HttpContext.Provider>

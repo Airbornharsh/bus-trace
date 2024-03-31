@@ -1,7 +1,10 @@
 import { useState } from 'react'
 import { supabase } from '../helpers/Supabase'
+import { useHttp } from '../Context/HttpContext'
+import { useNavigate } from 'react-router-dom'
 
 const SignUp = () => {
+  const { signUp } = useHttp()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -9,22 +12,38 @@ const SignUp = () => {
     password: '',
     confirmPassword: ''
   })
+  const Navigate = useNavigate()
 
   const handleSubmit = async (e: React.FormEvent<HTMLButtonElement>) => {
     e.preventDefault()
-    const { data, error } = await supabase.auth.signUp({
-      email: formData.email,
-      password: formData.password,
-      phone: formData.phone
-      // options: {
-      //   emailRedirectTo: 'http://localhost:3000'
-      // }
-    })
-    if (error) {
-      console.error('Error:', error.message)
-      return
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone
+        // options: {
+        //   emailRedirectTo: 'http://localhost:3000'
+        // }
+      })
+      if (error) {
+        console.error('Error:', error.message)
+        alert(error.message)
+        return
+      }
+      if (data.user) {
+        console.log('Data:', data)
+        await signUp(
+          data.user.id,
+          formData.name,
+          formData.email,
+          formData.phone
+        )
+      }
+      console.log('Data:', data)
+      Navigate('/login')
+    } catch (e) {
+      console.error('Error:', e)
     }
-    console.log('Data:', data)
   }
 
   return (
