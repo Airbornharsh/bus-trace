@@ -3,6 +3,7 @@ import { validate } from '../helpers/Json'
 import { useAuth } from './AuthContext'
 import { BusRes } from '../types/bus'
 import { UserRes } from '../types/user'
+import { useHttp } from './HttpContext'
 
 interface Position {
   busId: string
@@ -20,7 +21,6 @@ interface WebSocketContextProps {
   socket: WebSocket | null
   location: Location
   userLocations: { [key: string]: Location }
-  userList: string[]
   customAlert: string
   setBusSocket: () => void
   setUserSocket: (busId: string) => void
@@ -56,7 +56,8 @@ const WebSocketUrl =
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   children
 }) => {
-  const { session } = useAuth()
+  const { session, userData } = useAuth()
+  const { setUserList } = useHttp()
   const [connected, setConnected] = useState(false)
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [customAlert, setCustomAlert] = useState<string>('')
@@ -67,7 +68,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const [userLocations, setUserLocations] = useState<{
     [key: string]: Location
   }>({})
-  const [userList, setUserList] = useState<string[]>([])
 
   const setBusSocketFn = () => {
     if (socket) {
@@ -127,8 +127,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             }
           }))
         }
-        if (whichVals.includes('userList')) {
-          setUserList(parsedData.userList)
+        if (whichVals.includes('busUserList')) {
+          setUserList(parsedData.busUserList.filter((u) => u !== userData?.ID))
         }
         if (whichVals.includes('busMessage')) {
           setCustomAlert(parsedData.busMessage.message)
@@ -237,7 +237,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     setBusSocket: setBusSocketFn,
     location,
     userLocations,
-    userList,
     customAlert,
     sendMessage,
     setUserSocket: setUserSocketFn,

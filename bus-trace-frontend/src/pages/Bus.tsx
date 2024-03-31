@@ -12,20 +12,16 @@ import { Vector as VectorLayer } from 'ol/layer'
 import { Vector as VectorSource } from 'ol/source'
 import { useAuth } from '../Context/AuthContext'
 import Alert from '../components/Alert'
+import { useHttp } from '../Context/HttpContext'
 
 const Bus = () => {
   const [map, setMap] = useState<Map | null>(null)
   const [zoom, setZoom] = useState(16)
   const [load, setLoad] = useState(false)
   const { session } = useAuth()
-  const {
-    customAlert,
-    userLocations,
-    userList,
-    connected,
-    setBusSocket,
-    busClose
-  } = useWebSocket()
+  const { customAlert, userLocations, connected, setBusSocket, busClose } =
+    useWebSocket()
+  const { userList, userDatas } = useHttp()
 
   const params = useParams()
 
@@ -85,11 +81,22 @@ const Bus = () => {
 
   return (
     <div className="flex flex-col justify-center items-center h-screen w-screen relative">
-      <div className="fixed top-0 right-0 z-20">
+      <div className="left top-0 right-0 z-20">
         <ul>
-          {(userList.length > 0 ? userList : []).map((user) => (
-            <li key={user}>{user}</li>
-          ))}
+          {(userList.length > 0 ? userList : []).map((userId) => {
+            const user = Object.keys(userDatas).find((key) => key === userId)
+            if (user) {
+              return (
+                <li key={userId}>
+                  <p>{userDatas[userId].name}</p>
+                  <p>Lat: {userDatas[userId].lat || 0}</p>
+                  <p>Long: {userDatas[userId].long || 0}</p>
+                </li>
+              )
+            } else {
+              return null
+            }
+          })}
         </ul>
       </div>
       <div className="fixed top-0 -translate-x-[50%] left-[50%] z-20">

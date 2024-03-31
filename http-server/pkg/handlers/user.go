@@ -70,3 +70,38 @@ func GetUser(c *gin.Context) {
 		"user":    user,
 	})
 }
+
+func GetUserById(c *gin.Context) {
+	tx := db.DB.Begin()
+	code, user, _ := helpers.TokenToUid(c)
+	if user == nil {
+		tx.Rollback()
+		c.JSON(code, gin.H{
+			"message": "Error While Parsing the Data",
+		})
+		return
+	}
+	userId, ok := c.Params.Get("userId")
+	if !ok {
+		c.JSON(500, gin.H{
+			"message": "Error getting the User Id",
+		})
+		return
+	}
+
+	var tempUser *models.User
+	result := tx.Model(&models.User{}).Where("id = ?", userId).Find(&tempUser)
+	if result.Error != nil {
+		fmt.Println("Error in Creating", result.Error)
+		c.JSON(500, gin.H{
+			"message": result.Error,
+		})
+		return
+	}
+
+	tx.Commit()
+	c.JSON(200, gin.H{
+		"message": "User Fetched",
+		"user":    tempUser,
+	})
+}
