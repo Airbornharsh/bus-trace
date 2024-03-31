@@ -116,24 +116,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
     newSocket.addEventListener('message', (event) => {
       if (validate(event.data)) {
-        // if (
-        //   event.data.includes('lat') &&
-        //   event.data.includes('long') &&
-        //   event.data.includes('userId')
-        // ) {
-        //   const data = JSON.parse(event.data)
-        //   setUserLocations((prev) => ({
-        //     ...prev,
-        //     [data.userId]: {
-        //       lat: data.lat,
-        //       long: data.long
-        //     }
-        //   }))
-        // } else {
-        //   const data = JSON.parse(event.data)
-        //   setUserList(data || [])
-        // }
-
         const parsedData = JSON.parse(event.data) as BusRes
         const whichVals = parsedData.which.split('&')
         if (whichVals.includes('busData')) {
@@ -199,27 +181,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         console.log('Not Supported by Browser')
         alert('Not supported')
       }
-      // setInterval(() => {
-      //   if (navigator.geolocation) {
-      //     navigator.geolocation.getCurrentPosition(
-      //       (position) => {
-      //         newSocket.send(
-      //           JSON.stringify({
-      //             lat: position.coords.latitude,
-      //             long: position.coords.longitude
-      //           })
-      //         )
-      //       },
-      //       (e) => {
-      //         console.error(e)
-      //       },
-      //       { enableHighAccuracy: true }
-      //     )
-      //   } else {
-      //     console.log('Not Supported by Browser')
-      //     alert('Not supported')
-      //   }
-      // }, 5000)
     })
 
     newSocket.addEventListener('close', () => {
@@ -231,18 +192,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     })
 
     newSocket.addEventListener('message', (event) => {
-      // if (event.data.includes('lat') && event.data.includes('long')) {
-      //   const data = JSON.parse(event.data)
-      //   setLocation({
-      //     lat: data.lat,
-      //     long: data.long
-      //   })
-      // } else if (event.data.split(' ')[0] === 'Status:') {
-      //   setCustomAlert(event.data)
-      //   setTimeout(() => {
-      //     setCustomAlert('')
-      //   }, 5000)
-      // }
       const parsedData = JSON.parse(event.data) as UserRes
       const whichVals = parsedData.which.split('&')
       if (whichVals.includes('userBusData')) {

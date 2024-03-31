@@ -11,6 +11,7 @@ import { fromLonLat } from 'ol/proj'
 import { Vector as VectorLayer } from 'ol/layer'
 import { Vector as VectorSource } from 'ol/source'
 import { useAuth } from '../Context/AuthContext'
+import Alert from '../components/Alert'
 
 const Bus = () => {
   const [map, setMap] = useState<Map | null>(null)
@@ -83,17 +84,32 @@ const Bus = () => {
   }, [location, map, zoom])
 
   return (
-    <div className="flex flex-col justify-center items-center">
-      <p>{connected ? 'Connected' : 'Disconnected'}</p>
-      <p>{customAlert}</p>
-      <p>{'Latitude: ' + location.lat}</p>
-      <p>{'Longitude: ' + location.long}</p>
+    <div className="flex flex-col justify-center items-center h-screen w-screen relative">
+      <div className="fixed top-0 -translate-x-[50%] left-[50%] z-20">
+        {customAlert && <Alert customAlert={customAlert} />}
+      </div>
+      <p className="fixed top-0 right-0 p-1 z-20 bg-white">
+        {connected ? (
+          <img src="/icon/connected.png" alt="connected" className="w-6 h-6" />
+        ) : (
+          <img
+            src="/icon/disconnected.png"
+            alt="disconnected"
+            className="w-6 h-6"
+          />
+        )}
+      </p>
+      <div className="fixed bottom-0 -translate-x-[50%] left-[50%] z-20 text-xs">
+        <p>{'Lat: ' + location.lat}</p>
+        <p>{'Lon: ' + location.long}</p>
+      </div>
       <div
         id="user-map"
         style={{
-          width: '90vw',
-          height: '50rem',
-          overflow: 'hidden'
+          width: '100vw',
+          height: '100vh',
+          overflow: 'hidden',
+          zIndex: 0
         }}
       ></div>
     </div>
