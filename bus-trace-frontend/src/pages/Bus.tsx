@@ -11,20 +11,17 @@ import { fromLonLat } from 'ol/proj'
 import { Vector as VectorLayer } from 'ol/layer'
 import { Vector as VectorSource } from 'ol/source'
 import { useAuth } from '../Context/AuthContext'
+import Alert from '../components/Alert'
+import { useHttp } from '../Context/HttpContext'
 
 const Bus = () => {
   const [map, setMap] = useState<Map | null>(null)
   const [zoom, setZoom] = useState(16)
   const [load, setLoad] = useState(false)
   const { session } = useAuth()
-  const {
-    customAlert,
-    userLocations,
-    userList,
-    connected,
-    setBusSocket,
-    busClose
-  } = useWebSocket()
+  const { customAlert, userLocations, connected, setBusSocket, busClose } =
+    useWebSocket()
+  const { userList, userDatas } = useHttp()
 
   const params = useParams()
 
@@ -65,7 +62,7 @@ const Bus = () => {
 
     map?.getView().on('change:resolution', () => {
       const newZoom = map?.getView().getZoom()
-      setZoom(newZoom || 12)
+      setZoom(newZoom!)
     })
 
     setMap(map)
@@ -83,40 +80,56 @@ const Bus = () => {
   }, [location, map, zoom])
 
   return (
-    <div className="flex flex-col justify-center items-center">
-      <h2>Admin</h2>
-      {connected ? (
-        <button
-          className="px-2 h-8 bg-gray-500 text-white"
-          onClick={() => {
-            busClose()
-          }}
-        >
-          Close
-        </button>
-      ) : (
-        <button
-          className="px-2 h-8 bg-gray-500 text-white"
-          onClick={() => {
-            setBusSocket()
-          }}
-        >
-          Reconnect
-        </button>
-      )}
-      <p>{connected ? 'Connected' : 'Disconnected'}</p>
-      <p>{customAlert}</p>
-      <ul>
-        {(userList.length > 0 ? userList : []).map((user) => (
-          <li key={user}>{user}</li>
-        ))}
-      </ul>
+    <div className="flex flex-col justify-center items-center h-screen w-screen relative">
+      <div className="left top-0 right-0 z-20">
+        <ul>
+          {(userList.length > 0 ? userList : []).map((userId) => {
+            const user = Object.keys(userDatas).find((key) => key === userId)
+            if (user) {
+              return (
+                <li key={userId}>
+                  <p>{userDatas[userId].name}</p>
+                  <p>Lat: {userDatas[userId].lat || 0}</p>
+                  <p>Long: {userDatas[userId].long || 0}</p>
+                </li>
+              )
+            } else {
+              return null
+            }
+          })}
+        </ul>
+      </div>
+      <div className="fixed top-0 -translate-x-[50%] left-[50%] z-20">
+        {customAlert && <Alert customAlert={customAlert} />}
+      </div>
+      <p className="fixed top-0 right-0 p-1 z-20 bg-white">
+        {connected ? (
+          <img
+            src="/icon/connected.png"
+            alt="connected"
+            className="w-6 h-6"
+            onClick={() => {
+              busClose()
+            }}
+          />
+        ) : (
+          <img
+            src="/icon/disconnected.png"
+            alt="disconnected"
+            className="w-6 h-6"
+            onClick={() => {
+              setBusSocket()
+            }}
+          />
+        )}
+      </p>
       <div
         id="bus-map"
         style={{
-          width: '90vw',
-          height: '50rem',
-          overflow: 'hidden'
+          width: '100vw',
+          height: '100vh',
+          overflow: 'hidden',
+          zIndex: 0
         }}
       ></div>
     </div>

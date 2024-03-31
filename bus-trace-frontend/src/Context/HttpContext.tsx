@@ -12,6 +12,17 @@ interface HttpContextProps {
     email: string,
     phone: string
   ) => Promise<void>
+  userDatas: {
+    [key: string]: {
+      name: string
+      email: string
+      phone: string
+      lat: number
+      long: number
+    }
+  }
+  userList: string[]
+  setUserList: (users: string[]) => void
 }
 
 const HttpContext = createContext<HttpContextProps | undefined>(undefined)
@@ -35,6 +46,16 @@ const httpUrl = import.meta.env.VITE_APP_HTTP_SERVER_LINK
 
 export const HttpProvider: React.FC<HttpProviderProps> = ({ children }) => {
   const [busList, setBusList] = useState<Bus[]>([])
+  const [userDatas, setUserDatas] = useState<{
+    [key: string]: {
+      name: string
+      email: string
+      phone: string
+      lat: number
+      long: number
+    }
+  }>({})
+  const [userList, setUserList] = useState<string[]>([])
   const { session } = useAuth()
 
   const loadBusList = async (s: string) => {
@@ -77,10 +98,34 @@ export const HttpProvider: React.FC<HttpProviderProps> = ({ children }) => {
     }
   }
 
+  const setUserListFn = async (users: string[]) => {
+    users.forEach(async (u) => {
+      try {
+        if (Object.keys(userDatas).indexOf(u) === -1) {
+          const res = await axios.get(`${httpUrl}/user/${u}`, {
+            headers: {
+              Authorization: 'bearer ' + session?.access_token
+            }
+          })
+          setUserDatas((prev) => ({
+            ...prev,
+            [u]: res.data.user
+          }))
+        }
+      } catch (e) {
+        console.log(e)
+      }
+    })
+    setUserList(users)
+  }
+
   const contextValue: HttpContextProps = {
     busList,
     loadBusList,
-    signUp
+    signUp,
+    userDatas,
+    userList,
+    setUserList: setUserListFn
   }
   return (
     <HttpContext.Provider value={contextValue}>{children}</HttpContext.Provider>

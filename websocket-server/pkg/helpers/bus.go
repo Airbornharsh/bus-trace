@@ -202,7 +202,7 @@ func UpdateBusLocationDB(busId string, stopCh <-chan struct{}) {
 				}
 			}
 			if ok {
-				if result := db.DB.Model(&models.Bus{}).Where("id = ?", "d6e10f57-50ea-434a-a2ed-ad6a7a7205c1").Updates(map[string]interface{}{
+				if result := db.DB.Model(&models.Bus{}).Where("id = ?", busId).Updates(map[string]interface{}{
 					"lat":  loc.Lat,
 					"long": loc.Long,
 				}); result.Error != nil {

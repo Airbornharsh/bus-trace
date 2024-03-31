@@ -3,6 +3,7 @@ import { validate } from '../helpers/Json'
 import { useAuth } from './AuthContext'
 import { BusRes } from '../types/bus'
 import { UserRes } from '../types/user'
+import { useHttp } from './HttpContext'
 
 interface Position {
   busId: string
@@ -20,7 +21,6 @@ interface WebSocketContextProps {
   socket: WebSocket | null
   location: Location
   userLocations: { [key: string]: Location }
-  userList: string[]
   customAlert: string
   setBusSocket: () => void
   setUserSocket: (busId: string) => void
@@ -56,7 +56,8 @@ const WebSocketUrl =
 export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   children
 }) => {
-  const { session } = useAuth()
+  const { session, userData } = useAuth()
+  const { setUserList } = useHttp()
   const [connected, setConnected] = useState(false)
   const [socket, setSocket] = useState<WebSocket | null>(null)
   const [customAlert, setCustomAlert] = useState<string>('')
@@ -67,7 +68,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
   const [userLocations, setUserLocations] = useState<{
     [key: string]: Location
   }>({})
-  const [userList, setUserList] = useState<string[]>([])
 
   const setBusSocketFn = () => {
     if (socket) {
@@ -116,24 +116,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
 
     newSocket.addEventListener('message', (event) => {
       if (validate(event.data)) {
-        // if (
-        //   event.data.includes('lat') &&
-        //   event.data.includes('long') &&
-        //   event.data.includes('userId')
-        // ) {
-        //   const data = JSON.parse(event.data)
-        //   setUserLocations((prev) => ({
-        //     ...prev,
-        //     [data.userId]: {
-        //       lat: data.lat,
-        //       long: data.long
-        //     }
-        //   }))
-        // } else {
-        //   const data = JSON.parse(event.data)
-        //   setUserList(data || [])
-        // }
-
         const parsedData = JSON.parse(event.data) as BusRes
         const whichVals = parsedData.which.split('&')
         if (whichVals.includes('busData')) {
@@ -145,8 +127,8 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
             }
           }))
         }
-        if (whichVals.includes('userList')) {
-          setUserList(parsedData.userList)
+        if (whichVals.includes('busUserList')) {
+          setUserList(parsedData.busUserList.filter((u) => u !== userData?.ID))
         }
         if (whichVals.includes('busMessage')) {
           setCustomAlert(parsedData.busMessage.message)
@@ -199,27 +181,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
         console.log('Not Supported by Browser')
         alert('Not supported')
       }
-      // setInterval(() => {
-      //   if (navigator.geolocation) {
-      //     navigator.geolocation.getCurrentPosition(
-      //       (position) => {
-      //         newSocket.send(
-      //           JSON.stringify({
-      //             lat: position.coords.latitude,
-      //             long: position.coords.longitude
-      //           })
-      //         )
-      //       },
-      //       (e) => {
-      //         console.error(e)
-      //       },
-      //       { enableHighAccuracy: true }
-      //     )
-      //   } else {
-      //     console.log('Not Supported by Browser')
-      //     alert('Not supported')
-      //   }
-      // }, 5000)
     })
 
     newSocket.addEventListener('close', () => {
@@ -231,18 +192,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     })
 
     newSocket.addEventListener('message', (event) => {
-      // if (event.data.includes('lat') && event.data.includes('long')) {
-      //   const data = JSON.parse(event.data)
-      //   setLocation({
-      //     lat: data.lat,
-      //     long: data.long
-      //   })
-      // } else if (event.data.split(' ')[0] === 'Status:') {
-      //   setCustomAlert(event.data)
-      //   setTimeout(() => {
-      //     setCustomAlert('')
-      //   }, 5000)
-      // }
       const parsedData = JSON.parse(event.data) as UserRes
       const whichVals = parsedData.which.split('&')
       if (whichVals.includes('userBusData')) {
@@ -288,7 +237,6 @@ export const WebSocketProvider: React.FC<WebSocketProviderProps> = ({
     setBusSocket: setBusSocketFn,
     location,
     userLocations,
-    userList,
     customAlert,
     sendMessage,
     setUserSocket: setUserSocketFn,

@@ -48,7 +48,7 @@ export interface BusRes {
   busId: string
   busData: busData
   busMessage: busMessage
-  userList: string[]
+  busUserList: string[]
   busUserLocation: busUserLocation
   which: BusResWhich
 }
