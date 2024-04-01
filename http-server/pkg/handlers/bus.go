@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/airbornharsh/bus-trace/http-server/internal/db"
 	"github.com/airbornharsh/bus-trace/http-server/pkg/helpers"
@@ -84,6 +85,21 @@ func SearchBus(c *gin.Context) {
 		return
 	}
 	search := c.Query("search")
+	dist := c.Query("distance")
+	var distance int64
+	if dist == "" {
+		distance = 5000
+	} else {
+		d, err := strconv.ParseInt(dist, 10, 64)
+		if err != nil {
+			tx.Rollback()
+			c.JSON(500, gin.H{
+				"message": "Invalid distance value",
+			})
+			return
+		}
+		distance = d
+	}
 	lat, latOk := c.Params.Get("lat")
 	long, longOk := c.Params.Get("long")
 	if !latOk || !longOk {
@@ -95,7 +111,7 @@ func SearchBus(c *gin.Context) {
 	}
 
 	var buses []*models.Bus
-	if err := tx.Where("ST_DWithin(ST_MakePoint(?, ?)::geography, ST_MakePoint(long, lat)::geography, ?)", long, lat, 5000).Where("LOWER(name) LIKE ?", "%"+search+"%").Find(&buses).Error; err != nil {
+	if err := tx.Where("ST_DWithin(ST_MakePoint(?, ?)::geography, ST_MakePoint(long, lat)::geography, ?)", long, lat, distance).Where("LOWER(name) LIKE ?", "%"+search+"%").Find(&buses).Error; err != nil {
 		tx.Rollback()
 		fmt.Println("Error in Getting List", err.Error())
 		c.JSON(500, gin.H{

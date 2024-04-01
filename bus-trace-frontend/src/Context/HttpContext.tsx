@@ -76,7 +76,7 @@ export const HttpProvider: React.FC<HttpProviderProps> = ({ children }) => {
                   throw new Error('Location not found')
                 }
                 const res = await axios.get(
-                  `${httpUrl}/bus/${position.coords.latitude}/${position.coords.longitude}?search=${s}`,
+                  `${httpUrl}/bus/${position.coords.latitude + 0.001}/${position.coords.longitude}?search=${s}&distance=5000`,
                   {
                     headers: {
                       Authorization: 'bearer ' + session?.access_token
