@@ -85,13 +85,17 @@ export const HttpProvider: React.FC<HttpProviderProps> = ({ children }) => {
                 )
                 setBusList(res.data.buses)
                 resolve(true)
+                return
               } catch (e) {
                 console.log(e)
                 reject(e)
+                return
               }
             },
             (e) => {
               console.error(e)
+              reject(e)
+              return
             },
             { enableHighAccuracy: true }
           )
@@ -99,6 +103,7 @@ export const HttpProvider: React.FC<HttpProviderProps> = ({ children }) => {
           console.log('Not Supported by Browser')
           alert('Not supported')
           reject('Not supported')
+          return
         }
       }, 2000)
       setSearchTimer(timer)
