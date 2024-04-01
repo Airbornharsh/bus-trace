@@ -10,10 +10,13 @@ const Home = () => {
   const [loading, setLoading] = useState<boolean>(false)
   const Navigate = useNavigate()
   useEffect(() => {
-    setLoading(true)
-    loadBusList(search).finally(() => {
+    const load = async () => {
+      setLoading(true)
+      await loadBusList(search)
       setLoading(false)
-    })
+    }
+
+    load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search, session])
 

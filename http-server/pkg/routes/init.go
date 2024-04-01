@@ -21,5 +21,5 @@ func RouteInit(r *gin.Engine) {
 	userRoutes.GET("", handlers.GetUser)
 	userRoutes.GET("/:userId", handlers.GetUserById)
 	busRoutes.POST("", handlers.BusCreate)
-	busRoutes.GET("", handlers.SearchBus)
+	busRoutes.GET("/:lat/:long", handlers.SearchBus)
 }

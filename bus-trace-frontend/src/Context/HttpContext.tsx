@@ -56,19 +56,53 @@ export const HttpProvider: React.FC<HttpProviderProps> = ({ children }) => {
     }
   }>({})
   const [userList, setUserList] = useState<string[]>([])
+  const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null)
   const { session } = useAuth()
 
   const loadBusList = async (s: string) => {
-    try {
-      const res = await axios.get(`${httpUrl}/bus?search=${s}`, {
-        headers: {
-          Authorization: 'bearer ' + session?.access_token
-        }
-      })
-      setBusList(res.data.buses)
-    } catch (e) {
-      console.log(e)
+    if (searchTimer) {
+      clearTimeout(searchTimer)
     }
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            async (position) => {
+              try {
+                if (
+                  position.coords.latitude === 0 &&
+                  position.coords.longitude === 0
+                ) {
+                  throw new Error('Location not found')
+                }
+                const res = await axios.get(
+                  `${httpUrl}/bus/${position.coords.latitude}/${position.coords.longitude}?search=${s}`,
+                  {
+                    headers: {
+                      Authorization: 'bearer ' + session?.access_token
+                    }
+                  }
+                )
+                setBusList(res.data.buses)
+                resolve(true)
+              } catch (e) {
+                console.log(e)
+                reject(e)
+              }
+            },
+            (e) => {
+              console.error(e)
+            },
+            { enableHighAccuracy: true }
+          )
+        } else {
+          console.log('Not Supported by Browser')
+          alert('Not supported')
+          reject('Not supported')
+        }
+      }, 2000)
+      setSearchTimer(timer)
+    })
   }
 
   const signUp = async (

@@ -84,19 +84,26 @@ func SearchBus(c *gin.Context) {
 		return
 	}
 	search := c.Query("search")
-
-	var buses []*models.Bus
-	result := tx.Model(&models.Bus{}).Where("LOWER(name) LIKE ?", "%"+search+"%").Find(&buses)
-	if result.Error != nil {
+	lat, latOk := c.Params.Get("lat")
+	long, longOk := c.Params.Get("long")
+	if !latOk || !longOk {
 		tx.Rollback()
-		fmt.Println("Error in Getting List", result.Error)
 		c.JSON(500, gin.H{
-			"message": result.Error,
+			"message": "No Lat or No Long",
 		})
 		return
 	}
 
-	fmt.Println(buses)
+	var buses []*models.Bus
+	if err := tx.Where("ST_DWithin(ST_MakePoint(?, ?)::geography, ST_MakePoint(long, lat)::geography, ?)", long, lat, 5000).Where("LOWER(name) LIKE ?", "%"+search+"%").Find(&buses).Error; err != nil {
+		tx.Rollback()
+		fmt.Println("Error in Getting List", err.Error())
+		c.JSON(500, gin.H{
+			"message": err.Error(),
+		})
+		return
+	}
+
 	tx.Commit()
 	c.JSON(200, gin.H{
 		"message": "Bus List",

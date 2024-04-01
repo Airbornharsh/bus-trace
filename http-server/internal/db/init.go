@@ -27,6 +27,8 @@ func DbInit() {
 		fmt.Println("Connected")
 		db.AutoMigrate(&models.User{})
 		db.AutoMigrate(&models.Bus{})
+		db.Exec("CREATE EXTENSION IF NOT EXISTS postgis;")
+		db.Exec("CREATE EXTENSION IF NOT EXISTS postgis_topology;")
 		// db.Migrator().DropTable(&models.User{}, &models.Bus{})
 	}
 }
