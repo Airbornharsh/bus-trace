@@ -13,7 +13,7 @@ import { Vector as VectorSource } from 'ol/source'
 import { useAuth } from '../Context/AuthContext'
 import Alert from '../components/Alert'
 
-const Bus = () => {
+const User = () => {
   const [map, setMap] = useState<Map | null>(null)
   const [oldMarker, setOldMarker] = useState<Feature | null>(null)
   const [zoom, setZoom] = useState(16)
@@ -116,4 +116,4 @@ const Bus = () => {
   )
 }
 
-export default Bus
+export default User

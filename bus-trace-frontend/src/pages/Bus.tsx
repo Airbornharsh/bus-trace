@@ -13,15 +13,18 @@ import { Vector as VectorSource } from 'ol/source'
 import { useAuth } from '../Context/AuthContext'
 import Alert from '../components/Alert'
 import { useHttp } from '../Context/HttpContext'
+import { HiMenuAlt2 } from 'react-icons/hi'
+import { FaChevronLeft } from 'react-icons/fa'
 
 const Bus = () => {
+  const { session } = useAuth()
+  const { userList, userDatas } = useHttp()
+  const { customAlert, userLocations, connected, setBusSocket, busClose } =
+    useWebSocket()
   const [map, setMap] = useState<Map | null>(null)
   const [zoom, setZoom] = useState(16)
   const [load, setLoad] = useState(false)
-  const { session } = useAuth()
-  const { customAlert, userLocations, connected, setBusSocket, busClose } =
-    useWebSocket()
-  const { userList, userDatas } = useHttp()
+  const [isMenuOpened, setIsMenuOpened] = useState(false)
 
   const params = useParams()
 
@@ -81,24 +84,6 @@ const Bus = () => {
 
   return (
     <div className="flex flex-col justify-center items-center h-screen w-screen relative">
-      <div className="left top-0 right-0 z-20">
-        <ul>
-          {(userList.length > 0 ? userList : []).map((userId) => {
-            const user = Object.keys(userDatas).find((key) => key === userId)
-            if (user) {
-              return (
-                <li key={userId}>
-                  <p>{userDatas[userId].name}</p>
-                  <p>Lat: {userDatas[userId].lat || 0}</p>
-                  <p>Long: {userDatas[userId].long || 0}</p>
-                </li>
-              )
-            } else {
-              return null
-            }
-          })}
-        </ul>
-      </div>
       <div className="fixed top-0 -translate-x-[50%] left-[50%] z-20">
         {customAlert && <Alert customAlert={customAlert} />}
       </div>
@@ -123,6 +108,52 @@ const Bus = () => {
           />
         )}
       </p>
+      <div className={`fixed top-0 left-0 z-20 `}>
+        <div
+          className={`bg-white max-w-[30rem] w-[90vw] h-screen top-0 fixed  ${isMenuOpened ? ' left-0' : '-left-[100%]'} transition-all duration-300 z-30`}
+        >
+          <ul className="grid overflow-auto">
+            {(userList.length > 0 ? userList : []).map((userId) => {
+              const user = Object.keys(userDatas).find((key) => key === userId)
+              if (user) {
+                const userData = userDatas[user]
+                return (
+                  <>
+                    <li
+                      key={userId}
+                      className="bg-white shadow-md rounded-lg p-4 mb-4"
+                    >
+                      <div>
+                        <strong>Name:</strong> {userData.name}
+                      </div>
+                      <div>
+                        <strong>Phone:</strong> {userData.phone}
+                      </div>
+                      <div>
+                        <strong>Email:</strong> {userData.email}
+                      </div>
+                      <div>
+                        <strong>Location:</strong> Latitude: {userData.lat},
+                        Longitude: {userData.long}
+                      </div>
+                    </li>
+                  </>
+                )
+              } else {
+                return null
+              }
+            })}
+          </ul>
+          <FaChevronLeft
+            className="absolute top-0 -right-7 h-8 w-8 p-1 bg-gray-200"
+            onClick={() => setIsMenuOpened(false)}
+          />
+        </div>
+        <HiMenuAlt2
+          className="bg-white h-8 w-8"
+          onClick={() => setIsMenuOpened(true)}
+        />
+      </div>
       <div
         id="bus-map"
         style={{
