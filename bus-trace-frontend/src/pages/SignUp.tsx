@@ -20,10 +20,10 @@ const SignUp = () => {
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
-        phone: formData.phone
-        // options: {
-        //   emailRedirectTo: 'http://localhost:3000'
-        // }
+        phone: formData.phone,
+        options: {
+          emailRedirectTo: 'https://bus-trace.harshkeshri.com/login',
+        }
       })
       if (error) {
         console.error('Error:', error.message)
