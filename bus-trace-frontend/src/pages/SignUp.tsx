@@ -22,7 +22,7 @@ const SignUp = () => {
         password: formData.password,
         phone: formData.phone,
         options: {
-          emailRedirectTo: 'https://bus-trace.harshkeshri.com/login',
+          emailRedirectTo: 'https://bus-trace.harshkeshri.com/login'
         }
       })
       if (error) {
