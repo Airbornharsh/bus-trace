@@ -13,6 +13,7 @@ type User struct {
 	BusOwner bool    `json:"busOwner"`
 	Lat      float64 `json:"lat"`
 	Long     float64 `json:"long"`
+	Location string  `json:"location"`
 	BusID    *string
 	Bus      *Bus `gorm:"foreignKey:BusID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;"  json:"bus,omitempty"`
 }

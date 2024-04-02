@@ -19,6 +19,7 @@ interface HttpContextProps {
       phone: string
       lat: number
       long: number
+      location: string
     }
   }
   userList: string[]
@@ -53,6 +54,7 @@ export const HttpProvider: React.FC<HttpProviderProps> = ({ children }) => {
       phone: string
       lat: number
       long: number
+      location: string
     }
   }>({})
   const [userList, setUserList] = useState<string[]>([])
@@ -149,6 +151,7 @@ export const HttpProvider: React.FC<HttpProviderProps> = ({ children }) => {
               Authorization: 'bearer ' + session?.access_token
             }
           })
+          console.log('User:', res.data.user)
           setUserDatas((prev) => ({
             ...prev,
             [u]: res.data.user

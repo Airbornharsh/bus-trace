@@ -108,10 +108,6 @@ func UserSocket(c *gin.Context) {
 			},
 			Which: "userBusData&userMessage",
 		})
-		busConn.WriteJSON(types.BusResponse{
-			BusUserList: websocket.BusClients[busId],
-			Which:       "busUserList",
-		})
 
 		for {
 			var data types.UserRequest
@@ -166,11 +162,11 @@ func UserSocket(c *gin.Context) {
 					}
 				}
 				busConn.WriteJSON(types.BusResponse{
-					BusUserList: websocket.BusClients[busId],
+					BusUserList: tempSlice,
 					BusMessage: types.BusMessage{
 						Message: "User Disconnected",
 					},
-					Which: "busUserList&busMessage",
+					Which: "busMessage&busUserList",
 				})
 				break
 			}
@@ -188,13 +184,14 @@ func UserSocket(c *gin.Context) {
 				}
 				helpers.UpdateUserLocationDB(userId, data.UserLocation.Lat, data.UserLocation.Long)
 				busConn.WriteJSON(types.BusResponse{
-					BusId: busId,
+					BusId:       busId,
+					BusUserList: websocket.BusClients[busId],
 					BusUserLocation: types.BusUserLocation{
 						UserId: userId,
 						Lat:    data.UserLocation.Lat,
 						Long:   data.UserLocation.Long,
 					},
-					Which: "busUserLocation",
+					Which: "busUserLocation&busUserList",
 				})
 			}
 		}

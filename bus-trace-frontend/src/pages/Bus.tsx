@@ -5,11 +5,7 @@ import Map from 'ol/Map'
 import View from 'ol/View'
 import TileLayer from 'ol/layer/Tile'
 import XYZ from 'ol/source/XYZ'
-import Feature from 'ol/Feature'
-import Point from 'ol/geom/Point'
 import { fromLonLat } from 'ol/proj'
-import { Vector as VectorLayer } from 'ol/layer'
-import { Vector as VectorSource } from 'ol/source'
 import { useAuth } from '../Context/AuthContext'
 import Alert from '../components/Alert'
 import { useHttp } from '../Context/HttpContext'
@@ -19,13 +15,11 @@ import { FaChevronLeft } from 'react-icons/fa'
 const Bus = () => {
   const { session } = useAuth()
   const { userList, userDatas } = useHttp()
-  const { customAlert, userLocations, connected, setBusSocket, busClose } =
-    useWebSocket()
+  const { customAlert, connected, setBusSocket, busClose } = useWebSocket()
   const [map, setMap] = useState<Map | null>(null)
   const [zoom, setZoom] = useState(16)
   const [load, setLoad] = useState(false)
   const [isMenuOpened, setIsMenuOpened] = useState(false)
-
   const params = useParams()
 
   useEffect(() => {
@@ -48,39 +42,43 @@ const Bus = () => {
       ]
     })
 
-    const tempMarkers: Feature<Point>[] = []
-    Object.keys(userLocations).forEach(() => {
-      const marker = new Feature({
-        geometry: new Point(fromLonLat([84.8535844, 22.260423]))
-      })
-      tempMarkers.push(marker)
-    })
-    const vectorLayer = new VectorLayer({
-      source: new VectorSource({
-        features: [...tempMarkers]
-      })
-    })
-
-    map?.addLayer(vectorLayer)
-
     map?.getView().on('change:resolution', () => {
       const newZoom = map?.getView().getZoom()
       setZoom(newZoom!)
     })
-
     setMap(map)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userLocations])
+  }, [])
 
   useEffect(() => {
-    map?.setView(
-      new View({
-        center: fromLonLat([84.8535844, 22.260423]),
-        zoom: zoom
-      })
-    )
+    const onLoad = async () => {
+      try {
+        const position: GeolocationPosition = await new Promise(function (
+          resolve,
+          reject
+        ) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => resolve(position),
+            (error) => reject(error)
+          )
+        })
+
+        map?.setView(
+          new View({
+            center: fromLonLat([
+              position.coords.longitude,
+              position.coords.latitude
+            ]),
+            zoom: zoom
+          })
+        )
+      } catch (e) {
+        console.error(e)
+      }
+    }
+    onLoad()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location, map, zoom])
+  }, [map, zoom])
 
   return (
     <div className="flex flex-col justify-center items-center h-screen w-screen relative">
@@ -120,7 +118,7 @@ const Bus = () => {
                 return (
                   <>
                     <li
-                      key={userId}
+                      key={userId + 'user'}
                       className="bg-white shadow-md rounded-lg p-4 mb-4"
                     >
                       <div>
@@ -136,6 +134,7 @@ const Bus = () => {
                         <strong>Location:</strong> Latitude: {userData.lat},
                         Longitude: {userData.long}
                       </div>
+                      <div>Location: {userData.location}</div>
                     </li>
                   </>
                 )
