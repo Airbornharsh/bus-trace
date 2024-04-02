@@ -1,0 +1,55 @@
+name: bus-trace
+version: "3"
+services:
+  bus-trace-frontend:
+    build:
+      context: ./bus-trace-frontend
+      dockerfile: Dockerfile
+    environment:
+      - VITE_APP_ANON_KEY=${VITE_APP_ANON_KEY}
+      - VITE_APP_PROJECT_LINK=${VITE_APP_PROJECT_LINK}
+      - VITE_APP_HTTP_SERVER_LINK=${VITE_APP_HTTP_SERVER_LINK}
+      - VITE_APP_WEBSOCKET_SERVER_LINK=${VITE_APP_WEBSOCKET_SERVER_LINK}
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./bus-trace-frontend/src:/app/src
+    restart: always
+
+  http-server:
+    build:
+      context: ./http-server
+      dockerfile: Dockerfile.dev
+    environment:
+      - HOST=${HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - PASSWORD=${PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./http-server/pkg:/app/pkg
+      - ./http-server/internal:/app/internal
+      - ./http-server/cmd:/app/cmd
+    restart: always
+
+  websocket-server:
+    build:
+      context: ./websocket-server
+      dockerfile: Dockerfile.dev
+    environment:
+      - HOST=${HOST}
+      - DB_NAME=${DB_NAME}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - PASSWORD=${PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./websocket-server/pkg:/app/pkg
+      - ./websocket-server/internal:/app/internal
+      - ./websocket-server/cmd:/app/cmd
+    restart: always
