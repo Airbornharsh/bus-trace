@@ -5,7 +5,7 @@ import { useAuth } from './AuthContext'
 
 interface HttpContextProps {
   busList: Bus[]
-  loadBusList: (s: string) => Promise<void>
+  loadBusList: (s: string, first: boolean) => Promise<void>
   signUp: (
     id: string,
     name: string,
@@ -59,53 +59,56 @@ export const HttpProvider: React.FC<HttpProviderProps> = ({ children }) => {
   const [searchTimer, setSearchTimer] = useState<NodeJS.Timeout | null>(null)
   const { session } = useAuth()
 
-  const loadBusList = async (s: string) => {
+  const loadBusList = async (s: string, first: boolean) => {
     if (searchTimer) {
       clearTimeout(searchTimer)
     }
     await new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        if (navigator.geolocation) {
-          navigator.geolocation.getCurrentPosition(
-            async (position) => {
-              try {
-                if (
-                  position.coords.latitude === 0 &&
-                  position.coords.longitude === 0
-                ) {
-                  throw new Error('Location not found')
-                }
-                const res = await axios.get(
-                  `${httpUrl}/bus/${position.coords.latitude + 0.001}/${position.coords.longitude}?search=${s}&distance=5000`,
-                  {
-                    headers: {
-                      Authorization: 'bearer ' + session?.access_token
-                    }
+      const timer = setTimeout(
+        () => {
+          if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+              async (position) => {
+                try {
+                  if (
+                    position.coords.latitude === 0 &&
+                    position.coords.longitude === 0
+                  ) {
+                    throw new Error('Location not found')
                   }
-                )
-                setBusList(res.data.buses)
-                resolve(true)
-                return
-              } catch (e) {
-                console.log(e)
+                  const res = await axios.get(
+                    `${httpUrl}/bus/${position.coords.latitude + 0.001}/${position.coords.longitude}?search=${s}&distance=5000`,
+                    {
+                      headers: {
+                        Authorization: 'bearer ' + session?.access_token
+                      }
+                    }
+                  )
+                  setBusList(res.data.buses)
+                  resolve(true)
+                  return
+                } catch (e) {
+                  console.log(e)
+                  reject(e)
+                  return
+                }
+              },
+              (e) => {
+                console.error(e)
                 reject(e)
                 return
-              }
-            },
-            (e) => {
-              console.error(e)
-              reject(e)
-              return
-            },
-            { enableHighAccuracy: true }
-          )
-        } else {
-          console.log('Not Supported by Browser')
-          alert('Not supported')
-          reject('Not supported')
-          return
-        }
-      }, 2000)
+              },
+              { enableHighAccuracy: true }
+            )
+          } else {
+            console.log('Not Supported by Browser')
+            alert('Not supported')
+            reject('Not supported')
+            return
+          }
+        },
+        first ? 0 : 800
+      )
       setSearchTimer(timer)
     })
   }

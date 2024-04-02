@@ -7,12 +7,14 @@ const Home = () => {
   const { userData, session } = useAuth()
   const { loadBusList, busList } = useHttp()
   const [search, setSearch] = useState<string>('')
+  const [first, setFirst] = useState<boolean>(true)
   const [loading, setLoading] = useState<boolean>(false)
   const Navigate = useNavigate()
   useEffect(() => {
     const load = async () => {
       setLoading(true)
-      await loadBusList(search)
+      await loadBusList(search, first)
+      setFirst(false)
       setLoading(false)
     }
 
